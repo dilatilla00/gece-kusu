@@ -1,0 +1,502 @@
+// Arayüz. Metin ve isimleri ERA'dan, durumu Game'den okur.
+(function () {
+  const G = window.Game, E = G.E;
+  const $ui = document.getElementById('ui'), $layer = document.getElementById('layer');
+  const ui = { screen: 'hedef', tier: E.tiers[0].id, sel: null, modal: G.s.stats.robs === 0 ? { type: 'intro' } : null };
+
+  const fmt = n => Math.round(n).toLocaleString('tr-TR');
+  const mmss = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const k = x => (x / 1000).toFixed(1).replace('.0', '').replace('.', ',');
+  const range = (a, b) => b >= 1000 ? `${k(a)}–${k(b)} bin` : `${a}–${b}`;
+  const ic = (name, color) => `<i class="ti ti-${name}"${color ? ` style="color:var(--${color})"` : ''} aria-hidden="true"></i>`;
+  const diff = p => p >= 70 ? ['Kolay', 'ok', '#3ccf8e22'] : p >= 45 ? ['Orta', 'wa', '#ffb54722'] : ['Zor', 'no', '#ff6b5b22'];
+
+  function scene(type, mode) {
+    const P = mode === 'dim'
+      ? { sky: '#161d33', bl: '#20263a', w: '#3a4058', d: '#2c3348', moon: '#2c3348', st: .15 }
+      : { sky: '#1b2d63', bl: '#0b1228', w: '#f5c451', d: '#2a3b70', moon: '#e9edf8', st: .55 };
+    const draw = E.scenes[type] || Object.values(E.scenes)[0];
+    const seed = [...type].reduce((a, c) => a + c.charCodeAt(0), 0);
+    const stars = Array.from({ length: 7 }, (_, i) =>
+      `<circle cx="${(seed * 37 + i * 53) % 200}" cy="${(seed * 13 + i * 29) % 30 + 3}" r="${i % 3 ? .8 : 1.2}" fill="#fff" opacity="${P.st}"/>`).join('');
+    const mx = 172 - (seed % 40);
+    return `<svg viewBox="0 0 200 72" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect width="200" height="72" fill="${P.sky}"/>${stars}<circle cx="${mx}" cy="14" r="7" fill="${P.moon}"/><circle cx="${mx + 3}" cy="12" r="6" fill="${P.sky}"/>${draw(P)}<rect y="68" width="200" height="4" fill="${P.bl}"/></svg>`;
+  }
+
+  function ring(p) {
+    const r = 25, L = 2 * Math.PI * r, c = `var(--${diff(p)[1]})`;
+    return `<svg viewBox="0 0 64 64" width="62" height="62" style="flex-shrink:0" role="img" aria-label="Başarı şansı yüzde ${p}"><circle cx="32" cy="32" r="${r}" fill="none" stroke="#24376b" stroke-width="6"/><circle cx="32" cy="32" r="${r}" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${L * p / 100} ${L}" transform="rotate(-90 32 32)"/><text x="32" y="37" text-anchor="middle" font-size="15" font-weight="500" fill="#f2f5ff" font-family="Inter, sans-serif">%${p}</text></svg>`;
+  }
+
+  // Soygun ilerlemesi
+  function hchip() {
+    const st = G.heistStatus();
+    if (!st) return '';
+    const ph = E.heist.phases[Math.min(st.phase, E.heist.phases.length - 1)];
+    if (st.pending) return `<button class="hchip alert" data-act="openevent">${ic('alert-triangle')}<span>Karar bekliyor</span></button>`;
+    return `<button class="hchip" data-act="goheist">${ic(ph.icon)}<span>${ph.name}</span><b data-htotal>${mmss(st.totalLeft)}</b></button>`;
+  }
+  function heistPanel() {
+    const st = G.heistStatus(), H = E.heist, c = G.rushCost();
+    const rows = H.phases.map((ph, i) => {
+      const state = i < st.phase ? 'done' : i === st.phase ? 'now' : 'wait';
+      const time = state === 'done' ? 'Tamam' : state === 'now' ? mmss(st.phaseLeft) : mmss(G.s.heist.times[i]);
+      return `<div class="ph ${state}"><div class="pic">${ic(state === 'done' ? 'check' : ph.icon)}</div><div style="flex:1;min-width:0">
+        <div class="row"><span class="pn">${ph.name}</span><span class="mini" ${state === 'now' ? 'data-hleft' : ''}>${time}</span></div>
+        ${state === 'now' ? `<div class="bar"><i data-hbar style="width:${Math.round(st.phaseProg * 100)}%"></i></div>` : ''}</div></div>`;
+    }).join('');
+    const cur = H.phases[Math.min(st.phase, H.phases.length - 1)], last = st.log && st.log[st.log.length - 1];
+    const info = `<div class="row" style="margin-top:8px"><span class="mini">${ic('target')}Şu anki şans</span><b style="font-weight:500;color:var(--${diff(st.p)[1]})">%${st.p}</b></div>`
+      + (last ? `<div class="lastev">${ic(last.roll ? (last.ok ? 'circle-check' : 'alert-triangle') : 'point', last.roll ? (last.ok ? 'ok' : 'no') : 'mu')}<span><b>${last.title}:</b> ${last.text}</span></div>` : '');
+    if (st.pending) return `<div class="heist">${rows}${info}</div><button class="b1" data-act="openevent">${ic('alert-triangle')} Karar bekliyor</button>`;
+    return `<div class="heist">${rows}<p class="ptext">${cur.text}</p>${info}</div>
+      <button class="b2 ${G.s.gems < c ? 'off' : ''}" ${G.s.gems >= c ? 'data-act="rush"' : ''} style="margin:0">${ic('bolt', 'gem')}Hızlandır · <span data-hrush>${c}</span> ${E.gemName} <span class="mini" style="margin-left:6px">kalan <span data-htotal>${mmss(st.totalLeft)}</span></span></button>`;
+  }
+
+  // Üst çubuk ve menü
+  function top() {
+    const S = G.s, cap = G.xpCap(S.lv), q = G.quest(), done = G.questDone();
+    const prog = Math.min(S.quest.prog, q.n);
+    return `<header class="top">
+      <div class="ava">${ic(E.heroIcon)}<span class="lv">Sv ${S.lv}</span></div>
+      <div class="who"><div class="nm">${E.hero}</div><div class="bar"><i style="width:${Math.round(S.xp / cap * 100)}%"></i></div><div class="xt">${fmt(S.xp)} / ${fmt(cap)} tecrübe</div></div>
+      <div class="res" title="Para">${ic('coins', 'au')}${fmt(S.money)}</div>
+      <div class="res" title="Elmas">${ic('diamond', 'gem')}${S.gems}</div>
+      <div class="res fame" title="Ün">${ic('star', 'au')}${S.fame}</div>
+      <div class="res" title="${G.heatLabel()}">${ic('urgent', 'no')}${S.heat}/5</div>
+      ${hchip()}
+      <div class="quest" title="Görev">
+        <div style="min-width:0"><div class="qt">${q.text}</div><div class="bar qb"><i style="width:${Math.round(prog / q.n * 100)}%"></i></div></div>
+        <span class="mini">${fmt(prog)}/${fmt(q.n)}</span>
+        <button class="gift ${done ? 'ready' : ''}" ${done ? 'data-act="claim"' : ''} aria-label="Görev ödülü">${ic('gift')}</button>
+      </div>
+      <button class="icon-btn" data-act="menu" aria-label="Ayarlar">${ic('settings')}</button>
+    </header>`;
+  }
+
+  function rail() {
+    const S = G.s;
+    const items = [['hedef', 'map-2', 'Hedef'], ['yetenek', 'chart-arrows', 'Yetenek', S.sp], ['alet', 'tool', 'Alet'], ['karaborsa', 'building-warehouse', 'Karaborsa'], ['koleksiyon', 'crown', 'Koleksiyon', G.legendOffer() ? 1 : 0], ['gazete', 'news', 'Gazete'], ['ekip', 'users', 'Ekip', E.crew.filter(c => G.crewState(c) === 'ready').length]];
+    return `<nav class="rail">${items.map(([id, icon, name, badge, soon]) =>
+      `<button class="ri ${ui.screen === id ? 'on' : ''} ${soon ? 'soon' : ''}" data-go="${id}">${badge ? `<span class="bdg">${badge}</span>` : ''}${ic(icon)}${name}</button>`).join('')}</nav>`;
+  }
+
+  // Hedef ekranı
+  function card(t) {
+    const open = G.targetOpen(t), cd = G.cooldownLeft(t), sel = ui.sel === t.id;
+    if (!open) {
+      const miss = G.requirements(t).filter(r => !r.ok).map(r => r.text).join(' · ');
+      return `<button class="card dim ${sel ? 'sel' : ''}" data-sel="${t.id}"><div class="th">${scene(t.scene, 'dim')}<div class="ov"><span class="pill">${ic('lock')}${miss}</span></div></div>
+        <div class="info"><div class="row"><span class="nm">${t.name}</span></div><div class="mini" style="margin-top:4px">${ic('map-pin')}${t.place}</div></div></button>`;
+    }
+    const p = G.odds(t).p, d = diff(p), hs = G.heistStatus(), here = hs && hs.id === t.id;
+    return `<button class="card ${sel ? 'sel' : ''} ${cd ? 'dim' : ''}" data-sel="${t.id}"><div class="th">${scene(t.scene, 'on')}${here
+      ? `<div class="ov"><span class="pill" style="color:var(--au);border-color:var(--au)">${ic('run')}İş sürüyor</span></div>`
+      : cd ? `<div class="ov"><span class="pill">${ic('moon')}Soyuldu · ${cd} gece</span></div>`
+      : `<span class="pc" style="color:var(--${d[1]})">%${p}</span>`}${G.security(t) ? `<span class="secb">${ic('shield-lock')}${G.security(t)}</span>` : ''}</div>
+      <div class="info"><div class="row"><span class="nm">${t.name}</span><span class="tag" style="background:${d[2]};color:var(--${d[1]})">${d[0]}</span></div>
+      <div class="row" style="margin-top:4px"><span class="mini">${ic('map-pin')}${t.place}</span><span class="mini">${ic('coins', 'au')}${range(G.lootRange(t)[0], G.lootRange(t)[1])}</span></div></div></button>`;
+  }
+
+  function rewards(t) {
+    const lr = G.lootRange(t);
+    return `<div class="rewards"><div class="rw">${ic('coins', 'au')} ${range(lr[0], lr[1])}</div><div class="rw">${ic('bolt', 'xp')} ${fmt(G.xpFor(t))}</div><div class="rw">${ic('star', 'au')} +${t.fame}</div></div>`;
+  }
+
+  function detail(t) {
+    const S = G.s, open = G.targetOpen(t), cd = G.cooldownLeft(t), tr = G.tierById[t.tier];
+    const o = open ? G.odds(t) : null;
+    const tagName = G.cityOf(t) === G.cities[0].id ? tr.name : G.cityById[G.cityOf(t)].name;
+    let h = `<div class="scene">${scene(t.scene, open ? 'on' : 'dim')}<span class="tag">${tagName}</span></div>
+      <div class="row" style="margin-top:12px;align-items:flex-start"><div style="min-width:0"><h2>${t.name}</h2><div class="mini" style="margin-top:3px">${ic('map-pin')}${t.place}</div></div>${o ? ring(o.p) : ''}</div>
+      <p class="desc">${t.desc}</p>`;
+    if (!open) {
+      return h + `<div class="mini" style="margin-bottom:4px">Bu hedef için gerekenler</div>`
+        + G.requirements(t).map(r => `<div class="req">${ic(r.ok ? 'circle-check' : 'lock', r.ok ? 'ok' : 'mu')}${r.text}</div>`).join('')
+        + rewards(t) + `<div class="actions"><button class="b1 off">Kilitli</button></div>`;
+    }
+    h += o.rows.map(r => {
+      const col = r.base ? 'tx' : r.canceledBy ? 'mu' : r.v > 0 ? 'ok' : 'no';
+      const val = r.base ? '%' + r.v : r.canceledBy ? '0' : (r.v > 0 ? '+' : '−') + Math.abs(r.v);
+      return `<div class="fr ${r.canceledBy ? 'cx' : ''}">${ic(r.icon)}<span>${r.text}</span>${r.canceledBy ? `<small>${r.canceledBy}</small>` : ''}<b style="color:var(--${col})">${val}</b></div>`;
+    }).join('');
+    h += rewards(t);
+    const notes = G.activeBuffs().filter(it => it.kind !== 'nextBonus');
+    if (notes.length) h += notes.map(it => `<div class="mini" style="margin:-4px 0 6px;color:var(--au)">${ic(it.icon)}${it.name}</div>`).join('');
+    const cut = G.crewCut();
+    if (cut > 0) h += `<div class="mini" style="margin:-4px 0 6px">${ic('users')}Ekip payı: ganimetin %${Math.round(cut * 100)}'i</div>`;
+    const hs = G.heistStatus();
+    if (hs && hs.id === t.id) return h + `<div class="actions">${heistPanel()}</div>`;
+    if (cd) {
+      return h + `<div class="actions"><div class="mini" style="justify-content:center;margin-bottom:8px">${ic('moon')}Ortalık sakinleşsin: ${cd} gece</div>
+        ${hs ? '' : `<button class="b2" data-act="rest">${ic('zzz')}${E.labels.rest}</button>`}<button class="b1 off">Bekleniyor</button></div>`;
+    }
+    const cost = G.scoutCost(t);
+    const scoutBtn = S.scouted[t.id]
+      ? `<button class="b2 off">${ic('eye-search')}Keşif yapıldı</button>`
+      : `<button class="b2 ${S.money < cost ? 'off' : ''}" data-act="scout">${ic('eye-search')}${E.labels.scout} · ${ic('coins', 'au')}${fmt(cost)}</button>`;
+    const robBtn = hs
+      ? `<button class="b1 off">${E.heist.busy}</button>`
+      : `<button class="b1" data-act="rob">${E.labels.rob} · ${mmss(G.heistTimes(t).reduce((a, b) => a + b, 0))}</button>`;
+    return h + `<div class="actions">${scoutBtn}${robBtn}</div>`;
+  }
+
+  function cityBar() {
+    if (G.cities.length < 2) return '';
+    return `<div class="cities">${G.cities.map(c => {
+      const st = G.cityState(c);
+      const icon = st === 'here' ? 'map-pin' : st === 'open' ? 'plane' : st === 'locked' ? 'lock' : 'ticket';
+      return `<button class="city ${st}" data-city="${c.id}">${ic(icon)}${c.name}${st === 'locked' ? `<span class="cnt">Sv ${c.lv}</span>` : ''}</button>`;
+    }).join('')}</div>`;
+  }
+  function scrHedef() {
+    const city = G.s.city, home = city === G.cities[0].id;
+    const list = E.targets.filter(t => G.cityOf(t) === city && (!home || t.tier === ui.tier));
+    if (!ui.sel || !list.some(t => t.id === ui.sel)) {
+      ui.sel = (list.find(t => G.targetOpen(t) && !G.cooldownLeft(t)) || list.find(t => G.targetOpen(t)) || list[0]).id;
+    }
+    const tabs = home ? E.tiers.map(tr => {
+      const open = G.tierOpen(tr.id), n = E.targets.filter(t => t.tier === tr.id && G.cityOf(t) === city).length;
+      return `<button class="tab ${tr.id === ui.tier ? 'on' : ''} ${open ? '' : 'lockd'}" data-tier="${tr.id}">${ic(open ? tr.icon : 'lock')}${tr.name}<span class="cnt">${n}</span></button>`;
+    }).join('') : `<div class="mini" style="white-space:normal">${ic('info-circle')}${G.cityById[city].info || ''}</div>`;
+    return `<div class="targets"><div class="main">${cityBar()}<div class="tabs">${tabs}</div><div class="grid scroll" style="flex:1;min-height:0">${list.map(card).join('')}</div></div>
+      <aside class="detail scroll">${detail(G.targetById[ui.sel])}</aside></div>`;
+  }
+
+  // Yetenek ekranı
+  function node(s) {
+    const st = G.skillState(s);
+    const ft = {
+      owned: `<span style="color:var(--au)">${ic('check')} Öğrenildi</span>`,
+      ready: `<span>Seviye ${s.lv}</span><button class="sbtn" data-learn="${s.id}">Öğren</button>`,
+      nopoint: `<span>Seviye ${s.lv}</span><span>Puan gerekli</span>`,
+      locked: `<span>${ic('lock')} Seviye ${s.lv}</span>`,
+      blocked: `<span>${ic('lock')} Önce: ${s.req ? G.skillById[s.req].name : ''}</span><span>Sv ${s.lv}</span>`,
+    }[st];
+    return `<div class="node ${st}"><div class="hd"><div class="ic">${ic(s.icon)}</div><div><div class="nm">${s.name}</div><div class="ds">${s.desc}</div></div></div><div class="ft">${ft}</div></div>`;
+  }
+  function scrYetenek() {
+    return `<div class="page scroll"><div class="page-h"><div><h1>Yetenekler</h1><p>Her seviyede bir puan kazanırsın. Yetenekler şansını artırır, bazıları yeni hedef kademelerini açar.</p></div><div class="sp-chip">Harcanabilir puan: <b>${G.s.sp}</b></div></div>
+      <div class="branches">${E.branches.map(b => `<div><div class="branch-h">${ic(b.icon)}${b.name}</div>${E.skills.filter(s => s.branch === b.id).map(node).join('')}</div>`).join('')}</div>
+      ${E.mastery ? masteryBlock() : ''}</div>`;
+  }
+  function masteryBlock() {
+    const MA = E.mastery, S = G.s;
+    return `<div class="page-h" style="margin:26px 0 12px"><div><h1 style="font-size:17px">${ic('infinity', 'au')} ${MA.title}</h1><p>${MA.info}</p></div>${S.lv < MA.lv ? `<div class="sp-chip">${ic('lock')} Seviye ${MA.lv}'te açılır</div>` : ''}</div>
+      <div class="shop">${MA.items.map(m => {
+        const st = G.masteryState(m), n = (S.mastery || {})[m.id] || 0;
+        const btn = st === 'ready' ? `<button class="sbtn" data-mastery="${m.id}">Geliştir</button>`
+          : st === 'maxed' ? `<span style="color:var(--au)">${ic('crown')} En üst</span>`
+          : st === 'locked' ? `<span>${ic('lock')} Sv ${MA.lv}</span>` : `<span>Puan gerekli</span>`;
+        return `<div class="node ${st === 'locked' ? 'locked' : n ? 'owned' : ''}" style="margin:0"><div class="hd"><div class="ic">${ic(m.icon)}</div><div><div class="nm">${m.name}</div><div class="ds">${m.per}</div></div></div>
+          <div class="ft"><span>${n}${m.max ? ' / ' + m.max : ''}</span>${btn}</div></div>`;
+      }).join('')}</div>`;
+  }
+
+  // Alet ekranı
+  function scrAlet() {
+    const S = G.s;
+    return `<div class="page scroll"><div class="page-h"><div><h1>Aletler</h1><p>Bir kere alırsın, her işte yanında taşırsın.</p></div><div class="sp-chip">${ic('coins', 'au')} <b>${fmt(S.money)}</b> ${E.currency}</div></div>
+      <div class="shop">${E.tools.map(t => {
+        const own = S.tools.includes(t.id);
+        const btn = own ? `<button class="buy off">${ic('check')}Sende var</button>`
+          : `<button class="buy ${S.money < t.price ? 'off' : ''}" data-buy="${t.id}">${ic('coins')}${fmt(t.price)} ${E.currency}</button>`;
+        return `<div class="item ${own ? 'owned' : ''}"><div class="hd"><div class="ic">${ic(t.icon)}</div><div><div class="nm">${t.name}</div><div class="ds">${t.desc}</div></div></div>${btn}</div>`;
+      }).join('')}</div></div>`;
+  }
+
+  // Gazete ekranı
+  function scrGazete() {
+    const S = G.s, st = S.stats;
+    const feed = S.news.map((n, i) => `<article class="news ${i === 0 ? 'lead' : ''}"><div class="d">${G.dateOf(n.day).toUpperCase()}</div><h3>${n.h}</h3><p>${n.b}</p></article>`).join('');
+    const canBribe = S.heat > 0 && S.gems >= E.bribeCost;
+    return `<div class="paper"><div class="feed scroll"><div class="mast"><h1>${E.labels.newspaper}</h1><span>${G.dateOf(S.day)}</span></div>${feed}</div>
+      <aside class="side scroll">
+        <h4>${G.heatLabel().toLocaleUpperCase('tr-TR')}</h4>
+        <div class="heat">${[0, 1, 2, 3, 4].map(i => `<i class="${i < S.heat ? 'on' : ''}"></i>`).join('')}</div>
+        <div style="font-weight:500;margin:8px 0 4px">${E.labels.heatLevels[S.heat]}</div>
+        <p class="mini" style="white-space:normal;line-height:1.5;margin:0 0 12px">${E.labels.heatInfo}</p>
+        <button class="b2 ${canBribe ? '' : 'off'}" ${canBribe ? 'data-act="bribe"' : ''}>${ic('diamond', 'gem')}${E.labels.bribe} · ${E.bribeCost}</button>
+        <button class="b2 ${S.heist ? 'off' : ''}" ${S.heist ? '' : 'data-act="rest"'}>${ic('zzz')}${E.labels.rest}</button>
+        <h4 style="margin-top:18px">KARİYER</h4>
+        <div class="stat"><span>Toplam iş</span><b>${st.robs}</b></div>
+        <div class="stat"><span>Başarı oranı</span><b>%${st.robs ? Math.round(st.ok / st.robs * 100) : 0}</b></div>
+        <div class="stat"><span>Toplam ganimet</span><b>${fmt(st.loot)} ${E.currency}</b></div>
+        <div class="stat"><span>Keşifler</span><b>${st.scouts}</b></div>
+        <div class="stat"><span>Yakalanma</span><b>${st.caught}</b></div>
+        <div class="stat"><span>Ün</span><b>${S.fame}</b></div>
+      </aside></div>`;
+  }
+
+  function scrKoleksiyon() {
+    const C = E.collection, S = G.s, offer = G.legendOffer();
+    const sets = C.sets.map(st => {
+      const items = C.items.filter(i => i.set === st.id), have = items.filter(i => S.collection[i.id]).length, done = !!S.setsDone[st.id];
+      return `<div class="item ${done ? 'owned' : ''}"><div class="hd"><div class="ic">${ic(st.icon)}</div><div style="flex:1;min-width:0"><div class="row"><span class="nm">${st.name}</span><span class="mini">${have}/${items.length}</span></div><div class="ds" style="color:var(--${done ? 'au' : 'mu'})">${done ? ic('check') + ' ' : ''}${st.desc}</div></div></div>
+        <div>${items.map(i => {
+          const own = S.collection[i.id], tg = i.target && G.targetById[i.target];
+          const src = own ? 'Koleksiyonunda' : tg ? `${tg.name} soygunundan çıkar` : `Kaçakçıda çıkabilir · ${fmt(i.price)} ${E.currency}${S.lv < (i.lv || 1) ? ` · Sv ${i.lv}` : ''}`;
+          return `<div class="lg ${own ? 'own' : ''}">${ic(own ? i.icon : 'help-circle')}<div style="min-width:0"><div class="ln">${own ? i.name : i.name}</div><div class="mini" style="white-space:normal">${src}</div></div></div>`;
+        }).join('')}</div></div>`;
+    }).join('');
+    const offerBox = offer
+      ? `<div class="offer"><div class="ic">${ic(offer.icon)}</div><div style="flex:1;min-width:0"><div class="mini">BU GECE KAÇAKÇIDA · ${G.colSetById[offer.set].name}</div><div class="nm">${offer.name}</div></div>
+          <button class="buy ${S.money < offer.price ? 'off' : ''}" ${S.money >= offer.price ? 'data-act="buylegend"' : ''}>${ic('coins')}${fmt(offer.price)} ${E.currency}</button></div>`
+      : `<div class="offer empty">${ic('moon')}<span>Bu gece kaçakçıda efsanevi bir şey yok. Her gece yeniden bak.</span></div>`;
+    const done = Object.keys(S.setsDone || {}).length;
+    return `<div class="page scroll"><div class="page-h"><div><h1>${C.title}</h1><p>${C.info}</p></div><div class="sp-chip">Tamamlanan set: <b>${done}/${C.sets.length}</b></div></div>
+      ${offerBox}<div class="shop" style="margin-top:14px">${sets}</div></div>`;
+  }
+
+  function scrKaraborsa() {
+    const S = G.s, M = E.market, mk = G.market(), rates = G.gemRates();
+    const wares = mk.stock.map((e, i) => {
+      const it = G.itemById[e.id], st = G.marketState(i);
+      const price = e.gems ? `${ic('diamond', 'gem')}${e.gems}` : `${ic('coins')}${fmt(e.price)} ${E.currency}`;
+      const btn = {
+        sold: `<button class="buy off">${ic('check')}Satıldı</button>`,
+        active: `<button class="buy off">${ic('sparkles')}Zaten hazır</button>`,
+        useless: `<button class="buy off">Şu an gerek yok</button>`,
+        poor: `<button class="buy off">${price}</button>`,
+        ready: `<button class="buy" data-mbuy="${i}">${price}</button>`,
+      }[st];
+      return `<div class="item ware ${e.deal ? 'deal' : ''} ${st === 'sold' ? 'gone' : ''}">
+        ${e.deal ? `<span class="dealtag">${ic('flame')}Günün fırsatı · <s>${fmt(e.full)}</s></span>` : ''}
+        <div class="hd"><div class="ic">${ic(it.icon)}</div><div><div class="nm">${it.name}</div><div class="ds">${it.desc}</div></div></div>
+        <div class="mini">${ic(G.immediate(it) ? 'bolt' : 'hourglass')}${G.immediate(it) ? 'Hemen etkili' : 'Sonraki işte kullanılır'}</div>${btn}</div>`;
+    }).join('');
+    const buffs = G.activeBuffs();
+    return `<div class="paper"><div class="feed scroll"><div class="page-h" style="margin-bottom:14px"><div><h1 style="font-size:20px;font-weight:500;margin:0">${M.title}</h1><p>${M.info}</p></div></div>
+      <h3 class="sec">Bu geceki mallar</h3><div class="shop">${wares}</div></div>
+      <aside class="side scroll">
+        <p class="rumor">“${mk.rumor}”</p><div class="mini" style="margin:-4px 0 18px">— ${M.rumorBy}</div>
+        <h4>SONRAKİ İŞ İÇİN HAZIR</h4>
+        ${buffs.length ? buffs.map(it => `<div class="fr">${ic(it.icon, 'au')}<span style="color:var(--tx)">${it.name}</span></div>`).join('') : `<p class="mini" style="white-space:normal;margin:0">Henüz bir şey yok. Aldığın mallar bir sonraki soygunda kullanılır.</p>`}
+        <h4 style="margin-top:18px">ELMAS</h4>
+        <div class="stat"><span>Elindeki</span><b>${ic('diamond', 'gem')} ${S.gems}</b></div>
+        <button class="b2 ${S.gems < 1 ? 'off' : ''}" ${S.gems >= 1 ? 'data-act="sellgem"' : ''} style="margin-top:8px">1 elmas boz · +${fmt(rates.sell)} ${E.currency}</button>
+        <button class="b2 ${S.money < rates.buy ? 'off' : ''}" ${S.money >= rates.buy ? 'data-act="buygem"' : ''}>1 elmas al · ${fmt(rates.buy)} ${E.currency}</button>
+        <p class="mini" style="white-space:normal;margin:10px 0 0">${ic('moon')}Mallar her gece yenilenir.</p>
+      </aside></div>`;
+  }
+
+  function portrait(c, size) {
+    return `<div class="por" style="width:${size}px;height:${size}px;background:${c.color}22;color:${c.color};border-color:${c.color}66;font-size:${Math.round(size * .5)}px">${ic(c.icon)}</div>`;
+  }
+  function pips(n) { return `<span class="pips">${[1, 2, 3].map(i => `<i class="${i <= n ? 'on' : ''}"></i>`).join('')}</span>`; }
+  function crewCard(c) {
+    const S = G.s, st = G.crewState(c), lv = S.crew[c.id] || 0;
+    const cur = c.levels[Math.max(lv, 1) - 1], next = lv && lv < 3 ? c.levels[lv] : null;
+    let btn;
+    if (st === 'hired') {
+      const cost = G.trainCost(c);
+      btn = cost ? `<button class="buy ${S.money < cost ? 'off' : ''}" data-train="${c.id}">${ic('arrow-big-up-lines')}Eğit · ${fmt(cost)} ${E.currency}</button>`
+        : `<button class="buy off">${ic('crown')}En üst seviye</button>`;
+      btn += `<button class="linkbtn" data-dismiss="${c.id}">Ekipten çıkar</button>`;
+    } else if (st === 'locked') btn = `<button class="buy off">${ic('lock')}Seviye ${c.lv}</button>`;
+    else if (st === 'full') btn = `<button class="buy off">${ic('users')}Ekipte yer yok</button>`;
+    else btn = `<button class="buy ${st === 'poor' ? 'off' : ''}" ${st === 'ready' ? `data-hire="${c.id}"` : ''}>${ic('coins')}İşe al · ${fmt(c.hire)} ${E.currency}</button>`;
+    return `<div class="mate ${st}">
+      <div class="hd">${portrait(c, 46)}<div style="min-width:0;flex:1"><div class="row"><span class="nm">${c.name}</span>${lv ? pips(lv) : ''}</div><div class="mini" style="margin-top:2px">${c.role} · %${Math.round(c.cut * 100)} pay</div></div></div>
+      <p class="quote">“${c.quote}”</p>
+      <div class="eff">${ic('sparkles', 'au')}<span>${cur.desc}</span></div>
+      ${next ? `<div class="eff next">${ic('arrow-up-right')}<span>Sonraki: ${next.desc}</span></div>` : ''}
+      <div class="ft">${btn}</div></div>`;
+  }
+  function scrEkip() {
+    const S = G.s, slots = E.crewSlots, hired = Object.keys(S.crew).map(id => G.crewById[id]);
+    const slotRow = slots.map((need, i) => {
+      const m = hired[i];
+      if (m) return `<div class="slot filled">${portrait(m, 38)}<div style="min-width:0"><div class="nm">${m.name}</div><div class="mini">${m.role} ${pips(S.crew[m.id])}</div></div></div>`;
+      if (S.lv >= need) return `<div class="slot open">${ic('user-plus')}<span>${E.labels.crewEmpty}</span></div>`;
+      return `<div class="slot shut">${ic('lock')}<span>Seviye ${need}'de açılır</span></div>`;
+    }).join('');
+    const order = { hired: 0, ready: 1, poor: 2, full: 3, locked: 4 };
+    const list = E.crew.slice().sort((a, b) => order[G.crewState(a)] - order[G.crewState(b)] || a.lv - b.lv);
+    return `<div class="page scroll"><div class="page-h"><div><h1>Ekip</h1><p>${E.labels.crewInfo}</p></div>
+      <div style="display:flex;gap:8px"><div class="sp-chip">Yer: <b>${G.crewCount()}/${G.crewSlots()}</b></div><div class="sp-chip">Ekip payı: <b>%${Math.round(G.crewCut() * 100)}</b></div></div></div>
+      <div class="slots">${slotRow}</div>
+      <h3 class="sec">Şehirdeki adamlar</h3>
+      <div class="shop">${list.map(crewCard).join('')}</div></div>`;
+  }
+
+  // Modallar
+  function modal() {
+    const m = ui.modal;
+    if (!m) return '';
+    let inner = '';
+    if (m.type === 'intro') {
+      inner = `<div class="big" style="background:var(--au);color:#2a1d00">${ic(E.heroIcon)}</div><h2>Hoş geldin, ${E.hero}</h2>
+        <p>Küçük evlerle başla, ustalaştıkça dükkânlara, mağazalara ve müzelere uzan.</p>
+        <div style="text-align:left;margin-bottom:16px">
+          <div class="fr">${ic('target', 'au')}<span>Her hedefin bir başarı şansı var. Etkenleri sağ panelde görürsün.</span></div>
+          <div class="fr">${ic('eye-search', 'au')}<span>Keşif yaparak şansını artırabilirsin.</span></div>
+          <div class="fr">${ic('clock', 'au')}<span>Soygunlar gerçek zamanlı sürer: sessiz giriş, soygun ve kaçış.</span></div>
+          <div class="fr">${ic('alert-triangle', 'wa')}<span>Soygun sırasında beklenmedik şeyler olur. Ne yapacağına sen karar verirsin.</span></div>
+          <div class="fr">${ic('urgent', 'no')}<span>Başarısız olursan zabıta peşine düşebilir.</span></div>
+          <div class="fr">${ic('chart-arrows', 'au')}<span>Seviye atladıkça yetenek öğren, yeni kapılar açılsın.</span></div>
+        </div><button class="b1" data-act="close">Başla</button>`;
+    }
+    if (m.type === 'result') {
+      const r = m.r;
+      let icon, col, title, text;
+      if (r.aborted) { icon = 'arrow-back-up'; col = 'wa'; title = 'Geri çekildin'; text = (r.log[r.log.length - 1] || {}).text || 'Bu gecelik iş yarım kaldı.'; }
+      else if (r.legend) { icon = 'crown'; col = 'au'; title = 'Asrın soygunu!'; text = `${r.target.name} işi tamam. Bu geceyi İstanbul yıllarca konuşacak.`; }
+      else if (r.ok) { icon = 'circle-check'; col = 'ok'; title = 'Başarılı!'; text = `${r.target.name} işi tamam. İz bırakmadan çıktın.`; }
+      else if (r.caught) { icon = 'lock'; col = 'no'; title = 'Yakalandın!'; text = `Üç gece nezarethanede kaldın ve ${fmt(r.lost)} ${E.currency} kefalet ödedin. Takip biraz azaldı.`; }
+      else if (r.heatUp) { icon = 'urgent'; col = 'no'; title = 'Fark edildin'; text = 'Bir bekçi düdüğü öttü, damlardan kaçtın. Zabıta artık daha dikkatli.'; }
+      else { icon = 'door-exit'; col = 'wa'; title = 'Eli boş döndün'; text = 'Bir ışık yandı, sessizce geri çekildin. Kimse seni görmedi.'; }
+      const chips = [];
+      if (r.ok) chips.push(`<div class="rw">${ic('coins', 'au')} +${fmt(r.loot)}</div>`, `<div class="rw">${ic('star', 'au')} +${r.fame}</div>`);
+      if (r.ok && r.cut) chips.push(`<div class="rw" style="color:var(--mu)">${ic('users')} Ekip payı ${fmt(r.cut)}</div>`);
+      chips.push(`<div class="rw">${ic('bolt', 'xp')} +${fmt(r.xp)}</div>`);
+      if (r.heatDown) chips.push(`<div class="rw">${ic('urgent', 'ok')} Takip −1</div>`);
+      if (r.heatUp) chips.push(`<div class="rw">${ic('urgent', 'no')} Takip +1</div>`);
+      inner = `<div class="big" style="background:var(--${col});color:#0d1630">${ic(icon)}</div><h2>${title}</h2><p>${text}</p>
+        <div class="chips">${chips.join('')}</div>
+        ${r.levelUps ? `<div class="lvup">${ic('arrow-big-up-lines')} Seviye ${r.lv}! +${r.levelUps} yetenek puanı, +${r.levelUps} elmas</div>` : ''}
+        ${r.found ? `<div class="lvup">${ic(r.found.icon)} Efsanevi bir eşya buldun: ${r.found.name}</div>` : ''}
+        ${(r.sets || []).map(st => `<div class="lvup">${ic('crown')} Set tamamlandı: ${st.name}! ${st.desc}</div>`).join('')}
+        ${r.secUp ? `<div class="mini" style="justify-content:center;margin:-6px 0 12px;white-space:normal">${ic('shield-lock')}${r.target.name} artık daha korunaklı: bir dahaki sefere daha zor, daha kârlı.</div>` : ''}
+        ${r.safe ? `<div class="mini" style="justify-content:center;margin:-6px 0 12px">${ic('route', 'ok')}Kaçış planı sayesinde kimse seni fark etmedi.</div>` : ''}
+        ${r.used && r.used.length ? `<div class="mini" style="justify-content:center;margin:-6px 0 12px;white-space:normal">${ic('building-warehouse')}Kullanıldı: ${r.used.join(', ')}</div>` : ''}
+        ${r.log && r.log.length ? `<div class="evlog"><div class="src">GECENİN OLAYLARI</div>${r.log.map(l => `<div class="fr">${ic(l.roll ? (l.ok ? 'circle-check' : 'alert-triangle') : 'point', l.roll ? (l.ok ? 'ok' : 'no') : 'mu')}<span><b>${l.title}:</b> ${l.choice}</span></div>`).join('')}</div>` : ''}
+        ${r.news ? `<div class="clip"><div class="src">ERTESİ SABAH · ${E.labels.newspaper.toUpperCase()}</div><div class="h">${r.news.h}</div><div class="b">${r.news.b}</div></div>` : ''}
+        <div class="btn-row">${r.levelUps ? `<button class="b2" data-go="yetenek">Yeteneklere git</button>` : ''}<button class="b1" data-act="close">Devam</button></div>`;
+    }
+    if (m.type === 'event') {
+      const st = G.heistStatus();
+      if (!st || !st.pending) { ui.modal = null; return ''; }
+      const ev = st.pending, t = G.targetById[st.id];
+      const hintCol = { 'Güvenli': 'ok', 'Orta': 'wa', 'Riskli': 'no', 'Yavaş': 'mu', 'Cesur': 'au' };
+      const reqIc = c => c.req.crew ? 'users' : c.req.skill ? 'chart-arrows' : 'tool';
+      inner = `<div class="big" style="background:var(--wa);color:#3a2400">${ic(ev.icon)}</div>
+        <div class="mini" style="justify-content:center;margin-bottom:4px">${t.name} · ${E.heist.phases[Math.min(st.phase, 2)].name}</div>
+        <h2>${ev.title}</h2><p class="evtext">${ev.text}</p>
+        <div class="mini" style="justify-content:center;margin-bottom:14px">${ic('target')}Şu anki başarı şansın <b style="color:var(--tx);font-weight:500">%${st.p}</b></div>
+        <div class="choices">${ev.choices.map((c, i) => {
+          const open = G.choiceOpen(c), hc = hintCol[c.hint] || 'mu';
+          return `<button class="choice ${open ? '' : 'lock'}" ${open ? `data-choice="${i}"` : ''}>
+            <span class="ct">${c.req ? ic(reqIc(c), open ? 'gem' : 'dm') : ''}${c.text}</span>
+            <span class="tag" style="background:var(--p2);color:var(--${hc})">${c.hint}${c.chance != null ? ` · %${G.choiceChance(c)}` : ''}</span>
+            ${open ? '' : `<span class="why">${ic('lock')}${G.reqText(c)}</span>`}</button>`;
+        }).join('')}</div>
+        ${G.choicePenalty() ? `<div class="mini" style="justify-content:center;margin-top:10px;white-space:normal">${ic('info-circle')}Hedefin büyüklüğü${G.s.heat ? ' ve zabıta takibi' : ''} riskli seçeneklerin şansını %${G.choicePenalty()} düşürüyor.</div>` : ''}`;
+    }
+    if (m.type === 'outcome') {
+      const o = m.o, fx = o.fx, st = G.heistStatus();
+      const ch = [];
+      if (fx.p) ch.push([fx.p > 0 ? 'ok' : 'no', 'target', `Şans ${fx.p > 0 ? '+' : '−'}${Math.abs(fx.p)}`]);
+      if (fx.loot) ch.push([fx.loot > 0 ? 'ok' : 'no', 'coins', `Ganimet ${fx.loot > 0 ? '+' : '−'}%${Math.round(Math.abs(fx.loot) * 100)}`]);
+      if (fx.time) ch.push([fx.time < 0 ? 'ok' : 'wa', 'clock', `Süre ${fx.time > 0 ? '+' : '−'}${Math.abs(fx.time)} sn`]);
+      if (fx.heat) ch.push(['no', 'urgent', `Takip +${fx.heat}`]);
+      if (fx.fame) ch.push(['au', 'star', `Ün +${fx.fame}`]);
+      const col = o.choice.chance == null ? 'au' : o.ok ? 'ok' : 'no';
+      inner = `<div class="big" style="background:var(--${col});color:#0d1630">${ic(o.choice.chance == null ? 'player-play' : o.ok ? 'circle-check' : 'alert-triangle')}</div>
+        <h2>${o.choice.text}</h2>
+        ${o.choice.chance != null ? `<div class="mini" style="justify-content:center;margin:-2px 0 8px;color:var(--${col})">${o.ok ? 'Şans yaver gitti' : 'Şans yüzüne gülmedi'}</div>` : ''}
+        <p class="evtext">${fx.text}</p>
+        ${ch.length ? `<div class="chips">${ch.map(c => `<div class="rw" style="color:var(--${c[0]})">${ic(c[1])} ${c[2]}</div>`).join('')}</div>` : ''}
+        ${st ? `<div class="mini" style="justify-content:center;margin-bottom:14px">${ic('target')}Başarı şansın şimdi <b style="color:var(--tx);font-weight:500">%${st.p}</b></div>` : ''}
+        <button class="b1" data-act="close">Devam</button>`;
+    }
+    if (m.type === 'travel') {
+      const c = G.cityById[m.id], st = G.cityState(c);
+      inner = `<div class="big" style="background:var(--gem);color:#0d1630">${ic('plane')}</div><h2>${c.name}</h2><p>${c.info || ''}</p>
+        <div class="stat"><span>Gereken seviye</span><b>${c.lv}</b></div>
+        <div class="stat" style="margin-bottom:16px"><span>${E.travelLabel || 'Yol'}</span><b>${fmt(c.cost || 0)} ${E.currency}</b></div>
+        <div class="btn-row"><button class="b2" data-act="close">Vazgeç</button>${st === 'buy' ? `<button class="b1" data-act="travel">Yola çık</button>` : `<button class="b1 off">${st === 'locked' ? 'Seviye ' + c.lv : 'Yeterli para yok'}</button>`}</div>`;
+    }
+    if (m.type === 'menu') {
+      inner = `<h2>Ayarlar</h2><p>${E.title} · ${G.dateOf(G.s.day)}</p>
+        <button class="b2" data-act="askreset">${ic('refresh')}Yeni oyun başlat</button><button class="b1" data-act="close">Kapat</button>`;
+    }
+    if (m.type === 'dismiss') {
+      const c = G.crewById[m.id];
+      inner = `<div style="margin:0 auto 12px;width:64px">${portrait(c, 64)}</div><h2>${c.name} ekipten çıksın mı?</h2><p>Geri almak istersen işe alma ücretini yeniden ödersin ve eğitimi baştan başlar.</p>
+        <div class="btn-row"><button class="b2" data-act="close">Vazgeç</button><button class="b1" data-act="dismiss">Çıkar</button></div>`;
+    }
+    if (m.type === 'reset') {
+      inner = `<div class="big" style="background:var(--no);color:#0d1630">${ic('alert-triangle')}</div><h2>Emin misin?</h2><p>Bütün ilerlemen silinecek ve oyun baştan başlayacak.</p>
+        <div class="btn-row"><button class="b2" data-act="close">Vazgeç</button><button class="b1" data-act="reset">Sıfırla</button></div>`;
+    }
+    return `<div class="veil"><div class="modal" role="dialog" aria-modal="true">${inner}</div></div>`;
+  }
+
+  function toast(html) {
+    const el = document.createElement('div');
+    el.className = 'toast'; el.innerHTML = html;
+    $layer.appendChild(el);
+    setTimeout(() => el.remove(), 2700);
+  }
+
+  const screens = { koleksiyon: scrKoleksiyon, karaborsa: scrKaraborsa, hedef: scrHedef, yetenek: scrYetenek, alet: scrAlet, gazete: scrGazete, ekip: scrEkip };
+  function render() {
+    const scrolls = [...$ui.querySelectorAll('.scroll')].map(el => el.scrollTop);
+    $ui.innerHTML = top() + `<div class="body">${rail()}<main class="screen">${screens[ui.screen]()}</main></div>` + modal();
+    $ui.querySelectorAll('.scroll').forEach((el, i) => { if (scrolls[i]) el.scrollTop = scrolls[i]; });
+  }
+
+  $ui.addEventListener('click', e => {
+    const el = e.target.closest('[data-go],[data-tier],[data-sel],[data-act],[data-learn],[data-buy],[data-hire],[data-train],[data-dismiss],[data-mbuy],[data-choice],[data-mastery],[data-city]');
+    if (!el) return;
+    const d = el.dataset;
+    if (d.go) { ui.screen = d.go; ui.modal = null; }
+    else if (d.tier) { ui.tier = d.tier; ui.sel = null; }
+    else if (d.sel) { ui.sel = d.sel; }
+    else if (d.learn) { if (G.learn(d.learn)) toast(`${ic('circle-check', 'ok')}${G.skillById[d.learn].name} öğrenildi`); }
+    else if (d.city) {
+      const c = G.cityById[d.city], st = G.cityState(c);
+      if (st === 'here') { /* zaten burada */ }
+      else if (G.s.heist) toast(`${ic('alert-triangle', 'wa')}Önce elindeki işi bitir`);
+      else if (st === 'open') { G.travel(d.city); ui.sel = null; toast(`${ic('plane', 'gem')}${c.name}'ya geçtin`.replace("'ya geçtin", ' · hoş geldin')); }
+      else ui.modal = { type: 'travel', id: d.city };
+    }
+    else if (d.mastery) { if (G.learnMastery(d.mastery)) toast(`${ic('infinity', 'au')}${G.masteryById[d.mastery].name} geliştirildi`); }
+    else if (d.choice) { const o = G.choose(+d.choice); if (o) ui.modal = o.result ? { type: 'result', r: o.result } : { type: 'outcome', o }; }
+    else if (d.mbuy) { const it = G.buyMarket(+d.mbuy); if (it) toast(`${ic(it.icon, 'au')}${it.name} alındı`); }
+    else if (d.hire) { if (G.hire(d.hire)) toast(`${ic('user-plus', 'ok')}${G.crewById[d.hire].name} ekibe katıldı`); }
+    else if (d.train) { if (G.train(d.train)) toast(`${ic('arrow-big-up-lines', 'au')}${G.crewById[d.train].name} artık ${G.s.crew[d.train]}. seviye`); }
+    else if (d.dismiss) { ui.modal = { type: 'dismiss', id: d.dismiss }; }
+    else if (d.buy) { if (G.buy(d.buy)) toast(`${ic('circle-check', 'ok')}${G.toolById[d.buy].name} alındı`); }
+    else {
+      switch (d.act) {
+        case 'rob': if (G.startHeist(ui.sel)) toast(`${ic(E.heist.phases[0].icon, 'au')}${E.heist.phases[0].name} başladı`); break;
+        case 'rush': G.rush(); break;
+        case 'travel': { const id = ui.modal && ui.modal.id; if (id && G.travel(id)) { ui.sel = null; toast(`${ic('plane', 'gem')}${G.cityById[id].name} · hoş geldin`); } ui.modal = null; break; }
+        case 'buylegend': { const r = G.buyLegend(); if (r) { toast(`${ic(r.it.icon, 'au')}${r.it.name} koleksiyonunda`); r.sets.forEach(st => toast(`${ic('crown', 'au')}Set tamamlandı: ${st.name}`)); } break; }
+        case 'openevent': ui.modal = { type: 'event' }; break;
+        case 'goheist': { const t = G.targetById[G.s.heist.id]; Object.assign(ui, { screen: 'hedef', tier: t.tier, sel: t.id, modal: null }); break; }
+        case 'scout': if (G.scout(ui.sel)) toast(`${ic('eye-search', 'au')}Keşif tamam, şansın arttı`); break;
+        case 'rest': toast(G.rest() ? `${ic('zzz', 'au')}Sakin bir gece. Takip azaldı` : `${ic('zzz', 'au')}Bir gece dinlendin`); break;
+        case 'bribe': if (G.bribe()) toast(`${ic('diamond', 'gem')}Komiser bu sefer görmezden geldi`); break;
+        case 'claim': { const r = G.claimQuest(); if (r) toast(`${ic('gift', 'au')}Görev ödülü: +${fmt(r.money)} ${E.currency}, +${r.gems} ${E.gemName}`); break; }
+        case 'sellgem': if (G.sellGem()) toast(`${ic('diamond', 'gem')}Bir elmas bozuldu`); break;
+        case 'buygem': if (G.buyGem()) toast(`${ic('diamond', 'gem')}Bir elmas alındı`); break;
+        case 'menu': ui.modal = { type: 'menu' }; break;
+        case 'askreset': ui.modal = { type: 'reset' }; break;
+        case 'reset': G.reset(); Object.assign(ui, { screen: 'hedef', tier: E.tiers[0].id, sel: null, modal: { type: 'intro' } }); break;
+        case 'dismiss': if (ui.modal && G.dismiss(ui.modal.id)) toast(`${ic('user-minus')}${G.crewById[ui.modal.id].name} ekipten ayrıldı`); ui.modal = null; break;
+        case 'close': ui.modal = null; break;
+      }
+    }
+    render();
+  });
+
+  // Soygun sayacı: aşama değişince yeniden çiz, arada sadece süreleri güncelle.
+  let lastPhase = null;
+  setInterval(() => {
+    const st = G.heistStatus();
+    if (!st) { lastPhase = null; return; }
+    if (st.done) { const r = G.finishHeist(); lastPhase = null; if (r) { ui.modal = { type: 'result', r }; render(); } return; }
+    if (st.pending) { if (!ui.modal || (ui.modal.type !== 'event' && ui.modal.type !== 'outcome')) { ui.modal = { type: 'event' }; render(); } return; }
+    if (st.phase !== lastPhase) { lastPhase = st.phase; render(); return; }
+    $ui.querySelectorAll('[data-htotal]').forEach(e => { e.textContent = mmss(st.totalLeft); });
+    $ui.querySelectorAll('[data-hleft]').forEach(e => { e.textContent = mmss(st.phaseLeft); });
+    $ui.querySelectorAll('[data-hbar]').forEach(e => { e.style.width = Math.round(st.phaseProg * 100) + '%'; });
+    $ui.querySelectorAll('[data-hrush]').forEach(e => { e.textContent = G.rushCost(); });
+  }, 500);
+
+  document.title = E.title;
+  render();
+})();
