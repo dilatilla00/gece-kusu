@@ -8,15 +8,29 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Playfair+Display&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
-  <link rel="stylesheet" href="css/style.css?v=1795120431">
+  <link rel="stylesheet" href="css/style.css?v=1795121912">
 </head>
 <body>
   <div class="game"><div id="ui"></div><div id="layer"></div></div>
   <div class="rotate"><i class="ti ti-device-mobile-rotated" aria-hidden="true"></i><div>Daha iyi bir deneyim için telefonunu yan çevir.</div></div>
 
   <!-- Dönem paketi: başka bir dönem için sadece bu satırı değiştir. -->
-  <script src="eras/1920/content.js?v=1795120431"></script>
-  <script src="js/engine.js?v=1795120431"></script>
-  <script src="js/ui.js?v=1795120431"></script>
+  <script>
+    // Telefon gibi kısa ekranlarda tüm arayüzü orantılı küçültür.
+    (function () {
+      const g = document.querySelector('.game');
+      function fit() {
+        const w = innerWidth, h = innerHeight;
+        const small = h <= 520 || w <= 760;
+        const z = Math.max(0.7, Math.min(1, h / 470, w / 900));
+        g.classList.toggle('fit', small && z < 1);
+        g.style.setProperty('--z', z.toFixed(3));
+      }
+      addEventListener('resize', fit); addEventListener('orientationchange', fit); fit();
+    })();
+  </script>
+  <script src="eras/1920/content.js?v=1795121912"></script>
+  <script src="js/engine.js?v=1795121912"></script>
+  <script src="js/ui.js?v=1795121912"></script>
 </body>
 </html>

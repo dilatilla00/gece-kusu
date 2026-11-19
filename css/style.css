@@ -24,6 +24,8 @@ button { font-family: inherit; color: inherit; }
 @media (max-height: 520px), (max-width: 760px) {
   .game { width: 100vw; height: 100vh; border: 0; border-radius: 0; }
 }
+/* Küçük ekranlar (telefon yatay): arayüzü orantılı küçült, --z index.html'de hesaplanır */
+.game.fit { zoom: var(--z, 1); width: calc(100vw / var(--z, 1)); height: calc(100dvh / var(--z, 1)); border: 0; border-radius: 0; }
 
 /* Üst çubuk */
 .top { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--p1); border-bottom: 1px solid var(--ln); flex-shrink: 0; }
@@ -100,7 +102,7 @@ button { font-family: inherit; color: inherit; }
 .rewards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0; }
 .rw { background: var(--bg); border: 1px solid var(--ln); border-radius: 8px; padding: 6px 4px; text-align: center; font-size: 12px; font-weight: 500; white-space: nowrap; }
 .rw .ti { font-size: 14px; vertical-align: -2px; }
-.actions { margin-top: auto; padding-top: 8px; }
+.actions { margin-top: auto; padding-top: 8px; position: sticky; bottom: -14px; margin-bottom: -14px; padding-bottom: 14px; background: var(--p1); z-index: 2; }
 .b1 { width: 100%; background: var(--au); color: #2a1d00; border: 0; border-bottom: 4px solid var(--au2); border-radius: 11px; padding: 11px; font-weight: 500; font-size: 15px; cursor: pointer; position: relative; overflow: hidden; }
 .b1:hover { filter: brightness(1.05); }
 .b1:active { transform: translateY(2px); border-bottom-width: 2px; }
