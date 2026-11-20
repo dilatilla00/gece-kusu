@@ -4,8 +4,8 @@
 
 window.ERA = {
   id: '1920',
-  title: 'Gece Kuşu',
-  hero: 'Gece Kuşu',
+  title: 'Kibar Hırsız',
+  hero: 'Kibar Hırsız',
   heroIcon: 'spy',
   currency: 'lira',
   gemName: 'elmas',
@@ -328,7 +328,7 @@ window.ERA = {
     { id: 'hazine', tier: 'muze', lv: 18, legend: true, name: 'Saray Hazinesi', place: 'Sarayburnu', at: "Sarayburnu'nda", scene: 'saray',
       base: 35, factors: [{ tag: 'bekci', icon: 'shield', text: 'Hazine muhafızları', v: -20 }, { tag: 'alarm', icon: 'bell', text: 'Kilitli sandık alarmı', v: -15 }, { tag: 'polis', icon: 'badge', text: 'Sur devriyesi', v: -10 }, { icon: 'route', text: 'Unutulmuş sarnıç geçidi', v: 15 }],
       loot: [40000, 60000], xp: 5000, fame: 50, cd: 7, desc: 'Efsanevi Hilal Elması. Şimdiye kadar kimse denemeye cesaret edemedi.',
-      legendNews: ['Asrın soygunu!', 'Saray Hazinesi soyuldu, efsanevi Hilal Elması kayboldu. Yerinde bir kartvizit: "Gece Kuşu, saygılarımla."'] },
+      legendNews: ['Asrın soygunu!', 'Saray Hazinesi soyuldu, efsanevi Hilal Elması kayboldu. Yerinde bir kartvizit: "Kibar Hırsız, saygılarımla."'] },
 
     // ── Yurt dışı: her şehir bir kere bilet ve vize alınınca açılır ──
     { id: 'atina_antika', city: 'atina', tier: 'muze', lv: 19, name: 'Plaka antikacısı', place: 'Atina', at: "Atina'da", scene: 'antika',
@@ -382,7 +382,7 @@ window.ERA = {
     { id: 'mc_kumarhane', city: 'montecarlo', tier: 'muze', lv: 40, legend: true, name: 'Monte Carlo kumarhanesi', place: 'Monte Carlo', at: "Monte Carlo'da", scene: 'kumarhane',
       time: [120, 240, 60], base: 32, factors: [{ tag: 'bekci', icon: 'shield', text: 'Kumarhane muhafızları', v: -20 }, { tag: 'alarm', icon: 'bell', text: 'Kasa dairesi alarmı', v: -15 }, { tag: 'polis', icon: 'badge', text: 'Riviera polisi', v: -12 }, { tag: 'kasa', icon: 'lock-square', text: 'Dev çelik kasa', v: -15 }, { icon: 'users', text: 'Büyük turnuva gecesi', v: 15 }, { icon: 'route', text: 'Şarap mahzeninden geçit', v: 15 }],
       loot: [1250000, 2000000], xp: 15200, fame: 150, cd: 8, desc: "Avrupa'nın en büyük kumarhanesi. Gecenin hasılatı tek bir kasada.",
-      legendNews: ['Monte Carlo şokta!', 'Kumarhanenin ana kasası boşaltıldı. Masada tek bir kartvizit: "Gece Kuşu, İstanbul\'dan sevgilerle."'] },
+      legendNews: ['Monte Carlo şokta!', 'Kumarhanenin ana kasası boşaltıldı. Masada tek bir kartvizit: "Kibar Hırsız, İstanbul\'dan sevgilerle."'] },
   ],
 
   branches: [
@@ -538,9 +538,9 @@ window.ERA = {
   news: {
     intro: { h: 'Şehirde yeni bir hırsız mı türedi?', b: "Fatih'te bir evden çıkarken kapıyı kibarca kilitleyen meçhul şahıs, zabıtayı şaşkına çevirdi." },
     success: [
-      ['Gece Kuşu {at} yine iz bırakmadı', 'Dün gece {name} soyuldu. Kayıp eşyaların yerinde yalnızca zarif bir kartvizit bulundu.'],
+      ['Kibar Hırsız {at} yine iz bırakmadı', 'Dün gece {name} soyuldu. Kayıp eşyaların yerinde yalnızca zarif bir kartvizit bulundu.'],
       ['{at} kibar hırsız vakası', '{name} sahipleri sabah kapıyı kilitli, kasayı boş buldu. Zabıta şaşkın.'],
-      ['Gece Kuşu kimdir?', '{at} yaşanan son vaka, şehrin en kibar hırsızının yine iş başında olduğunu gösteriyor.'],
+      ['Kibar Hırsız kimdir?', '{at} yaşanan son vaka, şehrin en zarif hırsızının yine iş başında olduğunu gösteriyor.'],
       ['Hırsız teşekkür notu bıraktı', '{name} soyuldu. Masada bir not: "Misafirperverliğiniz için teşekkürler."'],
     ],
     fail: [
@@ -552,16 +552,16 @@ window.ERA = {
       ['Zabıta alarmda', '{name} önünde görülen şüpheli izini kaybettirdi. Semtte devriyeler çoğaldı.'],
     ],
     caught: [
-      ['Gece Kuşu yakalandı mı?', '{at} bir şüpheli gözaltına alındı, delil yetersizliğinden üç gün sonra serbest bırakıldı.'],
+      ['Kibar Hırsız yakalandı mı?', '{at} bir şüpheli gözaltına alındı, delil yetersizliğinden üç gün sonra serbest bırakıldı.'],
     ],
     // Efsanevi bir hedefin ilk soygunu
     legend: [
-      ['Asrın soygunu!', '{name} soyuldu, efsanevi Hilal Elması kayboldu. Yerinde bir kartvizit: "Gece Kuşu, saygılarımla."'],
+      ['Asrın soygunu!', '{name} soyuldu, efsanevi Hilal Elması kayboldu. Yerinde bir kartvizit: "Kibar Hırsız, saygılarımla."'],
     ],
     // Güvenliği artırılmış bir yerin yeniden soyulması
     repeat: [
-      ['Gece Kuşu aynı kapıdan yine girdi', '{name} sahipleri yeni kilitler taktırmıştı. İşe yaramadı. Zabıta çaresiz.'],
-      ['{at} ikinci şok', 'Güvenliği artırılan {name} yeniden soyuldu. Halk Gece Kuşu\'nu konuşuyor.'],
+      ['Kibar Hırsız aynı kapıdan yine girdi', '{name} sahipleri yeni kilitler taktırmıştı. İşe yaramadı. Zabıta çaresiz.'],
+      ['{at} ikinci şok', 'Güvenliği artırılan {name} yeniden soyuldu. Halk Kibar Hırsız\'ı konuşuyor.'],
     ],
   },
 

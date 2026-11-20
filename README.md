@@ -1,4 +1,4 @@
-# Gece Kuşu
+# Kibar Hırsız
 
 1920'ler İstanbul'unda geçen, menü tabanlı bir hırsızlık oyunu. Yatay ekran için tasarlandı.
 
