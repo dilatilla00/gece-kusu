@@ -28,3 +28,7 @@ python3 -m http.server 8642
 3. `index.html` içindeki dönem paketi satırını yeni dosyaya çevir.
 
 Motor ve arayüz değişmeden çalışır.
+
+## iOS uygulaması
+
+`ios/` klasöründe oyunu iPhone uygulaması olarak paketleyen Xcode projesi var. Oyun internetsiz çalışır; yazı tipleri ve simgeler `vendor/` klasöründe. App Store'a çıkış adımları için [ios/APP_STORE.md](ios/APP_STORE.md) dosyasına bak.
