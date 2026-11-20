@@ -313,3 +313,6 @@ button { font-family: inherit; color: inherit; }
 .game.fit .detail { padding: 12px; }
 .game.fit .cities { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
 .game.fit .cities::-webkit-scrollbar { display: none; }
+/* Telefonda hızlandır düğmesi tek satır kalsın; kalan süre zaten üst çubukta görünüyor */
+.game.fit [data-act="rush"], .game.fit .b2:has([data-hrush]) { white-space: nowrap; }
+.game.fit .b2:has([data-hrush]) .mini { display: none; }

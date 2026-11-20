@@ -8,7 +8,18 @@ struct GameView: UIViewRepresentable {
         config.setURLSchemeHandler(BundleSchemeHandler(), forURLScheme: BundleSchemeHandler.scheme)
         config.websiteDataStore = .default() // kayıtlar (localStorage) kalıcı olsun
 
+        // Oyundaki JavaScript hatalarını Xcode konsoluna yaz.
+        config.userContentController.add(context.coordinator, name: "log")
+        config.userContentController.addUserScript(WKUserScript(source: """
+            window.addEventListener('error', e => webkit.messageHandlers.log.postMessage('JS hata: ' + e.message + ' @ ' + e.filename + ':' + e.lineno));
+            window.addEventListener('unhandledrejection', e => webkit.messageHandlers.log.postMessage('JS hata: ' + e.reason));
+            """, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+
         let web = WKWebView(frame: .zero, configuration: config)
+        web.navigationDelegate = context.coordinator
+        #if DEBUG
+        if #available(iOS 16.4, *) { web.isInspectable = true }
+        #endif
         let bg = UIColor(named: "LaunchBg") ?? .black
         web.isOpaque = false
         web.backgroundColor = bg
@@ -23,6 +34,27 @@ struct GameView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
+        func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+            NSLog("[KibarHirsiz] %@", String(describing: message.body))
+        }
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            NSLog("[KibarHirsiz] sayfa yüklendi: %@", webView.url?.absoluteString ?? "-")
+            #if DEBUG
+            let probe = "JSON.stringify({w: innerWidth, h: innerHeight, g: document.querySelector('.game')?.getBoundingClientRect(), cls: document.querySelector('.game')?.className, ui: document.getElementById('ui')?.children.length, game: typeof window.Game})"
+            webView.evaluateJavaScript(probe) { r, e in NSLog("[KibarHirsiz] durum: %@", String(describing: r ?? e)) }
+            #endif
+        }
+        func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
+            NSLog("[KibarHirsiz] sayfa açılamadı: %@", error.localizedDescription)
+        }
+        func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+            NSLog("[KibarHirsiz] sayfa hatası: %@", error.localizedDescription)
+        }
+    }
 }
 
 /// gecekusu://app/... isteklerini uygulama paketindeki Web klasöründen yanıtlar.
