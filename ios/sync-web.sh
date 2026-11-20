@@ -8,6 +8,6 @@ DST="$HERE/GeceKusu/Web"
 mkdir -p "$DST"
 rsync -a --delete \
   --include='/index.html' --include='/css/***' --include='/js/***' \
-  --include='/eras/***' --include='/vendor/***' --exclude='*' \
+  --include='/eras/***' --include='/vendor/***' --include='/img/***' --exclude='*' \
   "$SRC/" "$DST/"
 echo "Web dosyaları kopyalandı: $DST"

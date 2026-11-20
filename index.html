@@ -14,10 +14,23 @@
   <link rel="icon" href="icon-512.png">
   <link rel="stylesheet" href="vendor/fonts/fonts.css">
   <link rel="stylesheet" href="vendor/tabler/tabler-icons.min.css">
-  <link rel="stylesheet" href="css/style.css?v=1795168919">
+  <link rel="stylesheet" href="css/style.css?v=1795169153">
 </head>
 <body>
-  <div class="game"><div id="ui"></div><div id="layer"></div></div>
+  <div class="game"><div id="ui"></div><div id="layer"></div>
+    <!-- Yükleme ve açılış ekranı -->
+    <div id="splash" class="splash">
+      <div class="sp-sky"><span class="sp-moon"></span></div>
+      <img class="sp-city" src="img/skyline.svg" alt="">
+      <div class="sp-center">
+        <img class="sp-emblem" src="img/emblem.svg" alt="">
+        <h1 class="sp-title">Kibar Hırsız</h1>
+        <div class="sp-tag"></div>
+        <div class="sp-load"><div class="sp-bar"><i></i></div><div class="sp-tip">Yükleniyor…</div></div>
+        <div class="sp-menu"><button class="sp-play">Oyuna başla</button><div class="sp-save"></div></div>
+      </div>
+    </div>
+  </div>
 
   <!-- Dönem paketi: başka bir dönem için sadece bu satırı değiştir. -->
   <script>
@@ -40,8 +53,9 @@
       addEventListener('resize', fit); addEventListener('orientationchange', fit); fit();
     })();
   </script>
-  <script src="eras/1920/content.js?v=1795168919"></script>
-  <script src="js/engine.js?v=1795168919"></script>
-  <script src="js/ui.js?v=1795168919"></script>
+  <script src="eras/1920/content.js?v=1795169153"></script>
+  <script src="js/engine.js?v=1795169153"></script>
+  <script src="js/ui.js?v=1795169153"></script>
+  <script src="js/splash.js?v=1795169153"></script>
 </body>
 </html>

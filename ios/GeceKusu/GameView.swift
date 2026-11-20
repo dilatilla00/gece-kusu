@@ -3,6 +3,8 @@ import WebKit
 
 /// Oyunu uygulamanın içindeki "Web" klasöründen, internet gerekmeden açar.
 struct GameView: UIViewRepresentable {
+    @Binding var loaded: Bool
+
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.setURLSchemeHandler(BundleSchemeHandler(), forURLScheme: BundleSchemeHandler.scheme)
@@ -10,6 +12,7 @@ struct GameView: UIViewRepresentable {
 
         // Oyundaki JavaScript hatalarını Xcode konsoluna yaz.
         config.userContentController.add(context.coordinator, name: "log")
+        config.userContentController.add(context.coordinator, name: "ready")
         config.userContentController.addUserScript(WKUserScript(source: """
             window.addEventListener('error', e => webkit.messageHandlers.log.postMessage('JS hata: ' + e.message + ' @ ' + e.filename + ':' + e.lineno));
             window.addEventListener('unhandledrejection', e => webkit.messageHandlers.log.postMessage('JS hata: ' + e.reason));
@@ -35,14 +38,20 @@ struct GameView: UIViewRepresentable {
 
     func updateUIView(_ uiView: WKWebView, context: Context) {}
 
-    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeCoordinator() -> Coordinator { Coordinator(loaded: $loaded) }
 
     final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
+        let loaded: Binding<Bool>
+        init(loaded: Binding<Bool>) { self.loaded = loaded }
+
         func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
+            if message.name == "ready" { loaded.wrappedValue = true; return } // açılış ekranı çizildi
             NSLog("[KibarHirsiz] %@", String(describing: message.body))
         }
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             NSLog("[KibarHirsiz] sayfa yüklendi: %@", webView.url?.absoluteString ?? "-")
+            // Sayfa çizim sinyali gelmezse amblemi yine de birkaç saniye sonra kaldır.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [loaded] in loaded.wrappedValue = true }
             #if DEBUG
             let probe = "JSON.stringify({w: innerWidth, h: innerHeight, g: document.querySelector('.game')?.getBoundingClientRect(), cls: document.querySelector('.game')?.className, ui: document.getElementById('ui')?.children.length, game: typeof window.Game})"
             webView.evaluateJavaScript(probe) { r, e in NSLog("[KibarHirsiz] durum: %@", String(describing: r ?? e)) }

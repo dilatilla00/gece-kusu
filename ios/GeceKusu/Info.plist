@@ -8,6 +8,10 @@
 	<dict>
 		<key>UIColorName</key>
 		<string>LaunchBg</string>
+		<key>UIImageName</key>
+		<string>Emblem</string>
+		<key>UIImageRespectsSafeAreaInsets</key>
+		<true/>
 	</dict>
 	<key>UIRequiresFullScreen</key>
 	<true/>
