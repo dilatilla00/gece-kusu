@@ -186,7 +186,14 @@
 
   // Soygun gerçek zamanlı üç aşamada sürer. Başarı şansı ve karaborsa etkileri başlarken sabitlenir.
   // Aşamalar sırasında olaylar çıkabilir: olay çıkınca sayaç durur, oyuncu seçim yapana kadar bekler.
-  const heistTimes = t => t.time || tierById[t.tier].time || [2, 3, 1];
+  // Soygun süresi: hedefin temel süresi, o anki zorluğa göre (Kolay kısa, Zor uzun) ölçeklenir.
+  const baseTimes = t => t.time || tierById[t.tier].time || [2, 3, 1];
+  function heistTimes(t) {
+    const rules = (E.heist && E.heist.timeByDifficulty) || [];
+    const p = odds(t).p, r = rules.find(x => p >= x.min);
+    const k = r ? r.mult : 1;
+    return baseTimes(t).map(s => Math.max(5, Math.round(s * k)));
+  }
   const eventById = by(E.events || []);
   const HC = E.heist || {};
   function pickPattern() {
@@ -567,7 +574,7 @@
     crewSlots, crewCount, crewCut, crewState, trainCost, hire, train, dismiss,
     xpCap, tierOpen, targetOpen, cooldownLeft, scoutCost, requirements, odds, dateOf,
     quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest, canAd, adReward, addGems,
-    pickPattern, rob, startHeist, heistStatus, finishHeist, rushCost, rush, heistTimes, choose, choiceChance, choicePenalty, choiceOpen, reqText, rushTarget,
+    pickPattern, rob, startHeist, heistStatus, finishHeist, rushCost, rush, heistTimes, baseTimes, choose, choiceChance, choicePenalty, choiceOpen, reqText, rushTarget,
     scout, rest, bribe, learn, buy, reset, markSeen,
   };
 })();
