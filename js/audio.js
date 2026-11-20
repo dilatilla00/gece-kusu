@@ -235,8 +235,13 @@ window.Sound = (function () {
     ambTimer = setTimeout(loop, 500);
   }
 
-  // ---- Arka plan müziği: 1920'ler havasında sakin bir caz döngüsü ----
-  // Akorlar: Dm7 – G7 – Cmaj7 – A7 (ii–V–I–VI), salınımlı (swing) yürüyen bas, fırça davul.
+  // ---- Müzik ----
+  // İki parça var: menüde 1920'ler havasında sakin bir caz, soygunda kısık bir gerilim müziği.
+  // Her parça kendi ses düğümüne (mOut) çalar; geçişte eskisi kısılır, yenisi açılır.
+  const midi = m => 440 * Math.pow(2, (m - 69) / 12);
+  let musicTimer = null, nextBar = 0, bar = 0, kind = null, mOut = null, drone = null, inHeist = false;
+
+  // Menü: Dm7 – G7 – Cmaj7 – A7 (ii–V–I–VI), salınımlı (swing) yürüyen bas, fırça davul.
   const BPM = 88, BEAT = 60 / BPM;
   const CHORDS = [
     { bass: [38, 41, 45, 48], notes: [62, 65, 69, 72] },
@@ -245,44 +250,95 @@ window.Sound = (function () {
     { bass: [45, 49, 52, 55], notes: [61, 64, 67, 69] },
   ];
   const MEL = [[74, 72, 69, -1], [71, -1, 67, 65], [64, 67, 71, 72], [73, -1, 69, -1]];
-  const midi = m => 440 * Math.pow(2, (m - 69) / 12);
-  let musicTimer = null, nextBar = 0, bar = 0;
   function piano(m, t, dur, vol) {
     const f = midi(m);
-    tone(f, t, dur, { type: 'sine', vol, a: 0.01, out: musicBus });
-    tone(f * 2, t, dur * 0.5, { type: 'sine', vol: vol * 0.25, a: 0.01, out: musicBus });
-    tone(f * 3, t, dur * 0.25, { type: 'triangle', vol: vol * 0.08, a: 0.005, out: musicBus });
+    tone(f, t, dur, { type: 'sine', vol, a: 0.01, out: mOut });
+    tone(f * 2, t, dur * 0.5, { type: 'sine', vol: vol * 0.25, a: 0.01, out: mOut });
+    tone(f * 3, t, dur * 0.25, { type: 'triangle', vol: vol * 0.08, a: 0.005, out: mOut });
   }
-  function scheduleBar(t, i) {
+  function menuBar(t, i) {
     const c = CHORDS[i % 4];
     for (let b = 0; b < 4; b++) {
       const bt = t + b * BEAT;
-      tone(midi(c.bass[b]), bt, BEAT * 0.9, { type: 'triangle', vol: 0.16, a: 0.01, out: musicBus });
-      // swing: 2. ve 4. vuruşta piyano akoru, ritim kaymalı
+      tone(midi(c.bass[b]), bt, BEAT * 0.9, { type: 'triangle', vol: 0.16, a: 0.01, out: mOut });
       if (b === 1 || b === 3) c.notes.forEach(n => piano(n, bt + BEAT * 0.66, BEAT * 1.2, 0.035));
-      // fırça davul
-      noise(bt, 0.12, { type: 'highpass', f: 5000, vol: b % 2 ? 0.05 : 0.025, out: musicBus });
-      noise(bt + BEAT * 0.66, 0.06, { type: 'highpass', f: 7000, vol: 0.02, out: musicBus });
+      noise(bt, 0.12, { type: 'highpass', f: 5000, vol: b % 2 ? 0.05 : 0.025, out: mOut });
+      noise(bt + BEAT * 0.66, 0.06, { type: 'highpass', f: 7000, vol: 0.02, out: mOut });
     }
-    // her iki ölçüde bir kısa melodi
-    const POS = [0, 1.66, 2, 3.66]; // salınımlı (swing) nota yerleri, vuruş cinsinden
+    const POS = [0, 1.66, 2, 3.66]; // salınımlı nota yerleri, vuruş cinsinden
     if (i % 2 === 0) MEL[(i / 2) % 4].forEach((m, k) => { if (m > 0) piano(m, t + POS[k] * BEAT, BEAT * 0.9, 0.05); });
   }
+
+  // Soygun: alçak uğultu, kalp atışı gibi bas, minör tonda kesik notalar, ara sıra tiz bir titreme.
+  const TBPM = 76, TBEAT = 60 / TBPM;
+  const PIZZ = [[50, -1, 53, -1], [52, -1, 49, -1], [50, -1, 53, 55], [56, -1, 55, 52]]; // Re minör, gergin
+  function startDrone() {
+    const t = now(), g = ctx.createGain(), lp = ctx.createBiquadFilter(), lfo = ctx.createOscillator(), lg = ctx.createGain();
+    lp.type = 'lowpass'; lp.frequency.value = 320; lp.Q.value = 4;
+    lfo.frequency.value = 0.08; lg.gain.value = 140; lfo.connect(lg).connect(lp.frequency);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.07, t + 2.5);
+    const oscs = [[73.42, 'sawtooth', 0], [73.42, 'sawtooth', 9], [36.71, 'sine', 0], [110, 'triangle', -6]].map(([f, ty, dt]) => {
+      const o = ctx.createOscillator(); o.type = ty; o.frequency.value = f; o.detune.value = dt; o.connect(lp); o.start(t); return o;
+    });
+    lp.connect(g).connect(mOut); lfo.start(t);
+    drone = { g, oscs: [...oscs, lfo] };
+  }
+  function stopDrone() {
+    if (!drone) return;
+    const d = drone, t = now(); drone = null;
+    d.g.gain.cancelScheduledValues(t); d.g.gain.setValueAtTime(d.g.gain.value, t); d.g.gain.exponentialRampToValueAtTime(0.0001, t + 0.8);
+    d.oscs.forEach(o => o.stop(t + 0.9));
+  }
+  function heistBar(t, i) {
+    for (let b = 0; b < 4; b++) {
+      const bt = t + b * TBEAT;
+      // kalp atışı: "güm-güm"
+      if (b % 2 === 0) { tone(55, bt, 0.16, { vol: 0.3, a: 0.004, out: mOut }); tone(49, bt + 0.24, 0.14, { vol: 0.2, a: 0.004, out: mOut }); }
+      // kesik (pizzicato) notalar, vuruş arası
+      const m = PIZZ[i % 4][b];
+      if (m > 0) tone(midi(m), bt + TBEAT * 0.5, 0.18, { type: 'triangle', vol: 0.07, a: 0.003, out: mOut });
+      // çok hafif saat tik-takı
+      noise(bt, 0.02, { f: 5200, q: 6, vol: 0.03, out: mOut });
+    }
+    // her dört ölçüde bir tiz, titreyen uyumsuz ses
+    if (i % 4 === 3) [74, 80].forEach(m => {
+      const o = ctx.createOscillator(), g = ctx.createGain(), tr = ctx.createOscillator(), tg = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = midi(m); tr.frequency.value = 9; tg.gain.value = 0.02;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.025, t + 1.2); g.gain.exponentialRampToValueAtTime(0.0001, t + TBEAT * 4);
+      tr.connect(tg).connect(g.gain); o.connect(g).connect(mOut);
+      o.start(t); tr.start(t); o.stop(t + TBEAT * 4 + 0.1); tr.stop(t + TBEAT * 4 + 0.1);
+    });
+  }
+
   function musicLoop() {
-    while (nextBar < now() + 1.5) { scheduleBar(nextBar, bar++); nextBar += BEAT * 4; }
+    const len = kind === 'heist' ? TBEAT * 4 : BEAT * 4, sched = kind === 'heist' ? heistBar : menuBar;
+    while (nextBar < now() + 1.5) { sched(nextBar, bar++); nextBar += len; }
     musicTimer = setTimeout(musicLoop, 400);
   }
-  let inHeist = false;
+  // Duruma uygun parçayı çal (menü ya da soygun); zaten çalıyorsa dokunma.
   function startMusic() {
-    if (!ctx || musicTimer || inHeist) return;
-    nextBar = now() + 0.2; bar = 0;
-    musicBus.gain.cancelScheduledValues(now()); musicBus.gain.setValueAtTime(0.0001, now()); musicBus.gain.exponentialRampToValueAtTime(0.55, now() + 2);
+    if (!ctx || !musicOn) return;
+    const want = inHeist ? 'heist' : 'menu';
+    if (kind === want && musicTimer) return;
+    stopMusic();
+    kind = want;
+    mOut = ctx.createGain(); mOut.connect(musicBus);
+    const t = now();
+    mOut.gain.setValueAtTime(0.0001, t); mOut.gain.exponentialRampToValueAtTime(want === 'heist' ? 0.9 : 0.55, t + (want === 'heist' ? 1.5 : 2));
+    musicBus.gain.cancelScheduledValues(t); musicBus.gain.setValueAtTime(1, t);
+    nextBar = t + 0.5; bar = 0;
+    if (want === 'heist') startDrone();
     musicLoop();
   }
   function stopMusic() {
-    if (!ctx || !musicTimer) return;
-    clearTimeout(musicTimer); musicTimer = null;
-    musicBus.gain.cancelScheduledValues(now()); musicBus.gain.setValueAtTime(musicBus.gain.value, now()); musicBus.gain.exponentialRampToValueAtTime(0.0001, now() + 0.6);
+    if (!ctx) return;
+    clearTimeout(musicTimer); musicTimer = null; kind = null;
+    stopDrone();
+    if (mOut) {
+      const old = mOut, t = now(); mOut = null;
+      old.gain.cancelScheduledValues(t); old.gain.setValueAtTime(Math.max(0.0001, old.gain.value), t); old.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+      setTimeout(() => old.disconnect(), 2500); // önceden sıraya girmiş notalar sessizce bitsin
+    }
   }
 
   const api = {
@@ -295,11 +351,12 @@ window.Sound = (function () {
     heist(on) {
       on = !!on; if (on === inHeist) return;
       inHeist = on;
-      if (on) stopMusic(); else if (musicOn) startMusic();
+      if (musicOn) startMusic(); // menü müziği ile gerilim müziği arasında geçiş
     },
     has: name => !!FX[name],
     get running() { return !!ctx && ctx.state === 'running'; },
     get playingMusic() { return !!musicTimer; },
+    get musicKind() { return musicTimer ? kind : null; },
   };
   return api;
 })();
