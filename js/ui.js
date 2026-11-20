@@ -48,9 +48,9 @@
     const cur = H.phases[Math.min(st.phase, H.phases.length - 1)], last = st.log && st.log[st.log.length - 1];
     const info = `<div class="row" style="margin-top:8px"><span class="mini">${ic('target')}Şu anki şans</span><b style="font-weight:500;color:var(--${diff(st.p)[1]})">%${st.p}</b></div>`
       + (last ? `<div class="lastev">${ic(last.roll ? (last.ok ? 'circle-check' : 'alert-triangle') : 'point', last.roll ? (last.ok ? 'ok' : 'no') : 'mu')}<span><b>${last.title}:</b> ${last.text}</span></div>` : '');
-    if (st.pending) return `<div class="heist">${rows}${info}</div><button class="b1" data-act="openevent">${ic('alert-triangle')} Karar bekliyor</button>`;
-    return `<div class="heist">${rows}<p class="ptext">${cur.text}</p>${info}</div>
-      <button class="b2 ${G.s.gems < c ? 'off' : ''}" ${G.s.gems >= c ? 'data-act="rush"' : ''} style="margin:0">${ic('bolt', 'gem')}Hızlandır · <span data-hrush>${c}</span> ${E.gemName} <span class="mini" style="margin-left:6px">kalan <span data-htotal>${mmss(st.totalLeft)}</span></span></button>`;
+    if (st.pending) return [`<div class="heist">${rows}${info}</div>`, `<button class="b1" data-act="openevent">${ic('alert-triangle')} Karar bekliyor</button>`];
+    return [`<div class="heist">${rows}<p class="ptext">${cur.text}</p>${info}</div>`,
+      `<button class="b2 ${G.s.gems < c ? 'off' : ''}" ${G.s.gems >= c ? 'data-act="rush"' : ''} style="margin:0">${ic('bolt', 'gem')}Hızlandır · <span data-hrush>${c}</span> ${E.gemName} <span class="mini" style="margin-left:6px">kalan <span data-htotal>${mmss(st.totalLeft)}</span></span></button>`];
   }
 
   // Üst çubuk ve menü
@@ -103,6 +103,8 @@
     return `<div class="rewards"><div class="rw">${ic('coins', 'au')} ${range(lr[0], lr[1])}</div><div class="rw">${ic('bolt', 'xp')} ${fmt(G.xpFor(t))}</div><div class="rw">${ic('star', 'au')} +${t.fame}</div></div>`;
   }
 
+  // Hedef paneli: bilgiler kendi alanında kayar, düğmeler altta ayrı durur (üst üste binmez).
+  const panel = (info, actions) => `<div class="dinfo scroll">${info}</div><div class="actions">${actions}</div>`;
   function detail(t) {
     const S = G.s, open = G.targetOpen(t), cd = G.cooldownLeft(t), tr = G.tierById[t.tier];
     const o = open ? G.odds(t) : null;
@@ -111,9 +113,9 @@
       <div class="row" style="margin-top:12px;align-items:flex-start"><div style="min-width:0"><h2>${t.name}</h2><div class="mini" style="margin-top:3px">${ic('map-pin')}${t.place}</div></div>${o ? ring(o.p) : ''}</div>
       <p class="desc">${t.desc}</p>`;
     if (!open) {
-      return h + `<div class="mini" style="margin-bottom:4px">Bu hedef için gerekenler</div>`
+      return panel(h + `<div class="mini" style="margin-bottom:4px">Bu hedef için gerekenler</div>`
         + G.requirements(t).map(r => `<div class="req">${ic(r.ok ? 'circle-check' : 'lock', r.ok ? 'ok' : 'mu')}${r.text}</div>`).join('')
-        + rewards(t) + `<div class="actions"><button class="b1 off">Kilitli</button></div>`;
+        + rewards(t), `<button class="b1 off">Kilitli</button>`);
     }
     h += o.rows.map(r => {
       const col = r.base ? 'tx' : r.canceledBy ? 'mu' : r.v > 0 ? 'ok' : 'no';
@@ -126,10 +128,10 @@
     const cut = G.crewCut();
     if (cut > 0) h += `<div class="mini" style="margin:-4px 0 6px">${ic('users')}Ekip payı: ganimetin %${Math.round(cut * 100)}'i</div>`;
     const hs = G.heistStatus();
-    if (hs && hs.id === t.id) return h + `<div class="actions">${heistPanel()}</div>`;
+    if (hs && hs.id === t.id) { const [hp, hb] = heistPanel(); return panel(h + hp, hb); }
     if (cd) {
-      return h + `<div class="actions"><div class="mini" style="justify-content:center;margin-bottom:8px">${ic('moon')}Ortalık sakinleşsin: ${cd} gece</div>
-        ${hs ? '' : `<button class="b2" data-act="rest">${ic('zzz')}${E.labels.rest}</button>`}<button class="b1 off">Bekleniyor</button></div>`;
+      return panel(h, `<div class="mini" style="justify-content:center;margin-bottom:8px">${ic('moon')}Ortalık sakinleşsin: ${cd} gece</div>
+        ${hs ? '' : `<button class="b2" data-act="rest">${ic('zzz')}${E.labels.rest}</button>`}<button class="b1 off">Bekleniyor</button>`);
     }
     const cost = G.scoutCost(t);
     const scoutBtn = S.scouted[t.id]
@@ -138,7 +140,7 @@
     const robBtn = hs
       ? `<button class="b1 off">${E.heist.busy}</button>`
       : `<button class="b1" data-act="rob">${E.labels.rob} · ${mmss(G.heistTimes(t).reduce((a, b) => a + b, 0))}</button>`;
-    return h + `<div class="actions">${scoutBtn}${robBtn}</div>`;
+    return panel(h, scoutBtn + robBtn);
   }
 
   function cityBar() {
@@ -160,7 +162,7 @@
       return `<button class="tab ${tr.id === ui.tier ? 'on' : ''} ${open ? '' : 'lockd'}" data-tier="${tr.id}">${ic(open ? tr.icon : 'lock')}${tr.name}<span class="cnt">${n}</span></button>`;
     }).join('') : `<div class="mini" style="white-space:normal">${ic('info-circle')}${G.cityById[city].info || ''}</div>`;
     return `<div class="targets"><div class="main">${cityBar()}<div class="tabs">${tabs}</div><div class="grid scroll" style="flex:1;min-height:0">${list.map(card).join('')}</div></div>
-      <aside class="detail scroll">${detail(G.targetById[ui.sel])}</aside></div>`;
+      <aside class="detail">${detail(G.targetById[ui.sel])}</aside></div>`;
   }
 
   // Yetenek ekranı

@@ -104,7 +104,8 @@ button { font-family: inherit; color: inherit; }
 .rewards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0; }
 .rw { background: var(--bg); border: 1px solid var(--ln); border-radius: 8px; padding: 6px 4px; text-align: center; font-size: 12px; font-weight: 500; white-space: nowrap; }
 .rw .ti { font-size: 14px; vertical-align: -2px; }
-.actions { margin-top: auto; padding-top: 8px; position: sticky; bottom: -14px; margin-bottom: -14px; padding-bottom: 14px; background: var(--p1); z-index: 2; }
+.detail .dinfo { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; padding: 0 8px 8px 0; margin-right: -4px; } /* sağdaki boşluk: iOS kaydırma çubuğu değerlerin üstüne binmesin */
+.actions { flex: none; padding-top: 8px; border-top: 1px solid var(--ln); }
 .b1 { width: 100%; background: var(--au); color: #2a1d00; border: 0; border-bottom: 4px solid var(--au2); border-radius: 11px; padding: 11px; font-weight: 500; font-size: 15px; cursor: pointer; position: relative; overflow: hidden; }
 .b1:hover { filter: brightness(1.05); }
 .b1:active { transform: translateY(2px); border-bottom-width: 2px; }
