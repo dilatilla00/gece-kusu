@@ -199,12 +199,6 @@ button { font-family: inherit; color: inherit; }
 .toast { background: var(--p3); border: 1px solid var(--ln2); border-radius: 10px; padding: 9px 16px; font-size: 13px; font-weight: 500; animation: toast 2.6s forwards; white-space: nowrap; display: flex; align-items: center; gap: 7px; pointer-events: none; }
 @keyframes toast { 0% { opacity: 0; transform: translateY(-8px); } 10%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; } }
 
-.rotate { display: none; }
-@media (orientation: portrait) and (max-width: 760px) {
-  .rotate { display: flex; position: fixed; inset: 0; z-index: 100; background: var(--bg); flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: var(--mu); text-align: center; padding: 30px; }
-  .rotate .ti { font-size: 54px; color: var(--au); animation: turn 2s infinite; }
-  @keyframes turn { 50% { transform: rotate(90deg); } }
-}
 
 @media (max-width: 980px) {
   .targets, .paper { grid-template-columns: minmax(0, 1fr) 250px; }
@@ -311,6 +305,9 @@ button { font-family: inherit; color: inherit; }
 .lg.own .ln { color: var(--tx); font-weight: 500; }
 
 /* Telefon yatay: kartları sık diz, şehir çubuğu tek satır kalsın */
+/* Telefon dik: oyunu döndür (genişlik/yükseklik JS'te ters verilir) */
+.game.rot { position: fixed; top: 0; left: 0; transform-origin: top left; transform: rotate(90deg) translateY(-100%);
+  padding-left: calc(env(safe-area-inset-top, 0px) / var(--z, 1)); padding-right: calc(env(safe-area-inset-bottom, 0px) / var(--z, 1)); }
 .game.fit .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
 .game.fit .main { padding: 10px 12px; }
 .game.fit .detail { padding: 12px; }
