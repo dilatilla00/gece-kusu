@@ -65,8 +65,8 @@ window.ERA = {
     // Şansa bağlı seçeneklerde: her kademe yukarısı ve her takip seviyesi şansı bu kadar düşürür
     choiceTierPenalty: 5,
     choiceHeatPenalty: 4,
-    // Zorluğa göre süre: başlarken şans %70+ (Kolay) ise yarı süre, %45 altı (Zor) ise 1,5 katı. Üç aşama aynı oranda değişir.
-    timeByDifficulty: [{ min: 70, mult: 0.5 }, { min: 45, mult: 1 }, { min: 0, mult: 1.5 }],
+    // Zorluğa göre süre: başlarken şans %70+ (Kolay) ise %25 kısa, %45 altı (Zor) ise 1,5 katı. Üç aşama aynı oranda değişir.
+    timeByDifficulty: [{ min: 70, mult: 0.75 }, { min: 45, mult: 1 }, { min: 0, mult: 1.5 }],
     eventPatterns: [
       { phases: [], w: 15 },
       { phases: [0], w: 16 },
