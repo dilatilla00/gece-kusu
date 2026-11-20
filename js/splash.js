@@ -55,6 +55,7 @@
 
   q('.sp-play').addEventListener('click', e => {
     e.stopPropagation();
+    if (window.Sound) { Sound.unlock(); Sound.play('unlock'); }
     $s.classList.add('out');
     setTimeout(() => $s.remove(), 600);
   });

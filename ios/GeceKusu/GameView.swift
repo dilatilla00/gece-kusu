@@ -9,6 +9,7 @@ struct GameView: UIViewRepresentable {
         let config = WKWebViewConfiguration()
         config.setURLSchemeHandler(BundleSchemeHandler(), forURLScheme: BundleSchemeHandler.scheme)
         config.websiteDataStore = .default() // kayıtlar (localStorage) kalıcı olsun
+        config.mediaTypesRequiringUserActionForPlayback = [] // ilk dokunuştan sonra sesler gecikmesiz çalsın
 
         // Oyundaki JavaScript hatalarını Xcode konsoluna yaz.
         config.userContentController.add(context.coordinator, name: "log")

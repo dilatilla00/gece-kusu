@@ -1,9 +1,16 @@
 import SwiftUI
+import AVFoundation
 
 @main
 struct GeceKusuApp: App {
     /// Oyun sayfası yüklenene kadar açılış ekranındaki amblem görünür kalır.
     @State private var loaded = false
+
+    init() {
+        // Oyun sesleri telefonun sessiz düğmesine uysun ve çalan başka müziği kesmesin.
+        try? AVAudioSession.sharedInstance().setCategory(.ambient, options: [.mixWithOthers])
+        try? AVAudioSession.sharedInstance().setActive(true)
+    }
 
     var body: some Scene {
         WindowGroup {
