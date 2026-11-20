@@ -4,11 +4,17 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Gece Kuşu</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Gece Kuşu">
+  <meta name="theme-color" content="#0d1630">
+  <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Playfair+Display&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
-  <link rel="stylesheet" href="css/style.css?v=1795121912">
+  <link rel="stylesheet" href="css/style.css?v=1795162345">
 </head>
 <body>
   <div class="game"><div id="ui"></div><div id="layer"></div></div>
@@ -22,15 +28,15 @@
       function fit() {
         const w = innerWidth, h = innerHeight;
         const small = h <= 520 || w <= 760;
-        const z = Math.max(0.7, Math.min(1, h / 470, w / 900));
+        const z = Math.max(0.78, Math.min(1, h / 460, w / 900));
         g.classList.toggle('fit', small && z < 1);
         g.style.setProperty('--z', z.toFixed(3));
       }
       addEventListener('resize', fit); addEventListener('orientationchange', fit); fit();
     })();
   </script>
-  <script src="eras/1920/content.js?v=1795121912"></script>
-  <script src="js/engine.js?v=1795121912"></script>
-  <script src="js/ui.js?v=1795121912"></script>
+  <script src="eras/1920/content.js?v=1795162345"></script>
+  <script src="js/engine.js?v=1795162345"></script>
+  <script src="js/ui.js?v=1795162345"></script>
 </body>
 </html>

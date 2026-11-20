@@ -8,7 +8,7 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; }
 body {
-  background: #05070d; color: var(--tx);
+  background: #0d1630; color: var(--tx);
   font-family: 'Inter', system-ui, sans-serif; font-size: 14px;
   display: flex; align-items: center; justify-content: center;
   -webkit-font-smoothing: antialiased; user-select: none;
@@ -25,7 +25,9 @@ button { font-family: inherit; color: inherit; }
   .game { width: 100vw; height: 100vh; border: 0; border-radius: 0; }
 }
 /* Küçük ekranlar (telefon yatay): arayüzü orantılı küçült, --z index.html'de hesaplanır */
-.game.fit { zoom: var(--z, 1); width: calc(100vw / var(--z, 1)); height: calc(100dvh / var(--z, 1)); border: 0; border-radius: 0; }
+.game.fit { zoom: var(--z, 1); width: calc(100vw / var(--z, 1)); height: calc(100dvh / var(--z, 1)); border: 0; border-radius: 0;
+  /* iPhone çentiği için kenar boşlukları (zoom ile çarpılmasın diye bölünür) */
+  padding-left: calc(env(safe-area-inset-left, 0px) / var(--z, 1)); padding-right: calc(env(safe-area-inset-right, 0px) / var(--z, 1)); }
 
 /* Üst çubuk */
 .top { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--p1); border-bottom: 1px solid var(--ln); flex-shrink: 0; }
@@ -307,3 +309,10 @@ button { font-family: inherit; color: inherit; }
 .lg .ln { font-size: 13px; color: var(--mu); }
 .lg.own .ti { color: var(--au); }
 .lg.own .ln { color: var(--tx); font-weight: 500; }
+
+/* Telefon yatay: kartları sık diz, şehir çubuğu tek satır kalsın */
+.game.fit .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.game.fit .main { padding: 10px 12px; }
+.game.fit .detail { padding: 12px; }
+.game.fit .cities { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.game.fit .cities::-webkit-scrollbar { display: none; }

@@ -1,0 +1,10 @@
+{
+  "name": "Gece Kuşu",
+  "short_name": "Gece Kuşu",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0d1630",
+  "theme_color": "#0d1630"
+}
