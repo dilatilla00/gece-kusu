@@ -133,6 +133,82 @@ window.Sound = (function () {
     gem(t) { for (let i = 0; i < 6; i++) tone(1800 + i * 380, t + i * 0.04, 0.25, { type: 'sine', vol: 0.05 }); },
     reward(t) { FX.coin(t); FX.gem(t + 0.12); },
     learn(t) { tone(587, t, 0.2, { type: 'triangle', vol: 0.09 }); tone(880, t + 0.1, 0.35, { type: 'triangle', vol: 0.09 }); },
+    // ---- Olay sesleri ----
+    // Köpek: hırlama ve iki havlama
+    bark(t) {
+      const growl = ctx.createOscillator(), gf = ctx.createBiquadFilter(), gg = ctx.createGain(), am = ctx.createOscillator(), ag = ctx.createGain();
+      growl.type = 'sawtooth'; growl.frequency.value = 85; am.frequency.value = 27; ag.gain.value = 0.06;
+      gf.type = 'lowpass'; gf.frequency.value = 500;
+      gg.gain.setValueAtTime(0.0001, t); gg.gain.exponentialRampToValueAtTime(0.09, t + 0.15); gg.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+      am.connect(ag).connect(gg.gain); growl.connect(gf).connect(gg).connect(sfxBus);
+      growl.start(t); am.start(t); growl.stop(t + 0.75); am.stop(t + 0.75);
+      [t + 0.75, t + 1.15].forEach((bt, i) => {
+        const o = ctx.createOscillator(), f1 = ctx.createBiquadFilter(), f2 = ctx.createBiquadFilter(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.setValueAtTime(i ? 470 : 430, bt); o.frequency.exponentialRampToValueAtTime(230, bt + 0.16);
+        f1.type = 'bandpass'; f1.frequency.value = 750; f1.Q.value = 3; f2.type = 'bandpass'; f2.frequency.value = 1600; f2.Q.value = 4;
+        g.gain.setValueAtTime(0.0001, bt); g.gain.exponentialRampToValueAtTime(0.5, bt + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, bt + 0.2);
+        o.connect(f1).connect(g); o.connect(f2).connect(g); g.connect(sfxBus); o.start(bt); o.stop(bt + 0.25);
+        noise(bt, 0.12, { f: 1100, q: 1.5, vol: 0.25 });
+      });
+    },
+    // Kilit sıkıştı: takırtı ve metal sürtünmesi
+    jam(t) {
+      for (let i = 0; i < 7; i++) noise(t + i * rnd(0.04, 0.08), 0.015, { f: rnd(3000, 5000), q: 7, vol: 0.25 });
+      noise(t + 0.5, 0.35, { f: 2600, q: 12, vol: 0.12, sweep: 0.7 });
+      tone(1900, t + 0.5, 0.35, { type: 'sawtooth', vol: 0.015, slide: 0.85 });
+    },
+    // Bekçi: ıslıkla bir melodi ve yavaş, ağır adımlar
+    guard(t) {
+      [1175, 1319, 1175, 988, 1047].forEach((f, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain(), v = ctx.createOscillator(), vg = ctx.createGain();
+        const bt = t + i * 0.22; o.type = 'sine'; o.frequency.value = f; v.frequency.value = 6; vg.gain.value = 12;
+        v.connect(vg).connect(o.frequency); env(g, bt, 0.03, 0.07, 0.2); o.connect(g).connect(sfxBus);
+        o.start(bt); v.start(bt); o.stop(bt + 0.3); v.stop(bt + 0.3);
+      });
+      for (let i = 0; i < 4; i++) { const st = t + 1.3 + i * 0.45; noise(st, 0.08, { type: 'lowpass', f: 180, q: 1, vol: 0.4 }); tone(60, st, 0.08, { vol: 0.08 }); }
+    },
+    // Üst kattan ses: döşeme gıcırtısı ve adımlar
+    creakup(t) {
+      const o = ctx.createOscillator(), fl = ctx.createBiquadFilter(), g = ctx.createGain();
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(95, t); o.frequency.linearRampToValueAtTime(140, t + 0.5);
+      fl.type = 'bandpass'; fl.frequency.value = 700; fl.Q.value = 8;
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.14, t + 0.1); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+      o.connect(fl).connect(g).connect(sfxBus); o.start(t); o.stop(t + 0.65);
+      for (let i = 0; i < 3; i++) noise(t + 0.9 + i * 0.6, 0.1, { type: 'lowpass', f: 150, q: 1, vol: 0.35 });
+    },
+    // Gizli kasa: şifre çarkı tıkırtıları ve tok bir kilit
+    safe(t) {
+      for (let i = 0; i < 14; i++) noise(t + i * 0.045, 0.008, { f: 4500, q: 10, vol: 0.2 });
+      for (let i = 0; i < 8; i++) noise(t + 0.75 + i * 0.06, 0.008, { f: 3800, q: 10, vol: 0.2 });
+      noise(t + 1.3, 0.09, { type: 'lowpass', f: 260, q: 3, vol: 0.45 });
+    },
+    // Değerli tablo: parıltı
+    sparkle(t) { [1568, 1976, 2349, 2637, 3136].forEach((f, i) => tone(f, t + i * 0.07, 0.5, { type: 'sine', vol: 0.05 })); },
+    // Kedi: miyav ve sallanan porselen
+    catvase(t) {
+      const o = ctx.createOscillator(), fl = ctx.createBiquadFilter(), g = ctx.createGain();
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(520, t); o.frequency.linearRampToValueAtTime(820, t + 0.25); o.frequency.linearRampToValueAtTime(560, t + 0.65);
+      fl.type = 'bandpass'; fl.Q.value = 5; fl.frequency.setValueAtTime(1700, t); fl.frequency.linearRampToValueAtTime(900, t + 0.65);
+      g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.22, t + 0.06); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+      o.connect(fl).connect(g).connect(sfxBus); o.start(t); o.stop(t + 0.75);
+      for (let i = 0; i < 5; i++) tone(rnd(2800, 3600), t + 0.9 + i * 0.12, 0.08, { type: 'triangle', vol: 0.05 });
+    },
+    // Mektuplar: kâğıt hışırtısı ve mühür çıtırtısı
+    paper(t) { FX.rustle(t); FX.rustle(t + 0.35); noise(t + 0.8, 0.03, { type: 'highpass', f: 2500, vol: 0.25 }); },
+    // Alarm zili
+    alarmbell(t) {
+      for (let i = 0; i < 26; i++) { const bt = t + i * 0.055; tone(1400, bt, 0.05, { type: 'sine', vol: 0.09 }); tone(4340, bt, 0.03, { type: 'sine', vol: 0.03 }); }
+    },
+    // Düdük: iki kez
+    whistle2(t) { FX.whistle(t, 0.35); FX.whistle(t + 0.5, 0.7); },
+    // Kapı kilitli: kol takırtısı
+    handle(t) { for (let i = 0; i < 4; i++) { const bt = t + i * 0.18; noise(bt, 0.05, { type: 'lowpass', f: 600, q: 2, vol: 0.35 }); noise(bt + 0.02, 0.02, { f: 3000, q: 5, vol: 0.12 }); } },
+    // Tanık: pencere gıcırtısı ve şaşkın bir nefes
+    witness(t) {
+      FX.door(t);
+      noise(t + 1.0, 0.25, { f: 900, q: 2, vol: 0.12, sweep: 1.8 });
+      tone(320, t + 1.0, 0.25, { type: 'triangle', vol: 0.05, slide: 1.3 });
+    },
     // Alet kırılması: çatırtı
     break(t) { noise(t, 0.08, { type: 'highpass', f: 1500, vol: 0.4 }); noise(t + 0.03, 0.2, { type: 'lowpass', f: 900, vol: 0.3 }); tone(180, t, 0.15, { type: 'square', vol: 0.06, slide: 0.5 }); },
   };
@@ -196,8 +272,9 @@ window.Sound = (function () {
     while (nextBar < now() + 1.5) { scheduleBar(nextBar, bar++); nextBar += BEAT * 4; }
     musicTimer = setTimeout(musicLoop, 400);
   }
+  let inHeist = false;
   function startMusic() {
-    if (!ctx || musicTimer) return;
+    if (!ctx || musicTimer || inHeist) return;
     nextBar = now() + 0.2; bar = 0;
     musicBus.gain.cancelScheduledValues(now()); musicBus.gain.setValueAtTime(0.0001, now()); musicBus.gain.exponentialRampToValueAtTime(0.55, now() + 2);
     musicLoop();
@@ -214,6 +291,13 @@ window.Sound = (function () {
     set sfx(v) { sfxOn = !!v; setPref('gk_sfx', sfxOn); if (!sfxOn) ambience(null); },
     get music() { return musicOn; },
     set music(v) { musicOn = !!v; setPref('gk_music', musicOn); if (musicOn) { unlock(); startMusic(); } else stopMusic(); },
+    // Soygun sürerken müzik susar, sadece soygun sesleri duyulur; iş bitince müzik geri gelir.
+    heist(on) {
+      on = !!on; if (on === inHeist) return;
+      inHeist = on;
+      if (on) stopMusic(); else if (musicOn) startMusic();
+    },
+    has: name => !!FX[name],
     get running() { return !!ctx && ctx.state === 'running'; },
     get playingMusic() { return !!musicTimer; },
   };

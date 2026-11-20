@@ -590,13 +590,13 @@
   let lastPhase = null, lastAfford = null;
   setInterval(() => {
     const st = G.heistStatus();
-    if (window.Sound) Sound.ambience(st && !st.pending && !st.done ? st.phase : null);
+    if (window.Sound) { Sound.heist(!!st && !st.done); Sound.ambience(st && !st.pending && !st.done ? st.phase : null); }
     if (!st) { lastPhase = null; return; }
     if (st.done) {
       if (ui.modal && ui.modal.type === 'outcome') return; // oyuncu olayın sonucunu okusun, sonra sonuç gelsin
       const r = G.finishHeist(); lastPhase = null; lastAfford = null; if (r) { ui.modal = { type: 'result', r }; resultSound(r); render(); } return;
     }
-    if (st.pending) { if (!ui.modal || (ui.modal.type !== 'event' && ui.modal.type !== 'outcome')) { ui.modal = { type: 'event' }; snd('alert'); render(); } return; }
+    if (st.pending) { if (!ui.modal || (ui.modal.type !== 'event' && ui.modal.type !== 'outcome')) { ui.modal = { type: 'event' }; snd(st.pending.sfx && window.Sound && Sound.has(st.pending.sfx) ? st.pending.sfx : 'alert'); render(); } return; }
     const afford = G.s.gems >= G.rushCost();
     if (st.phase !== lastPhase || afford !== lastAfford) { if (lastPhase != null && st.phase !== lastPhase) snd('phase'); lastPhase = st.phase; lastAfford = afford; render(); return; }
     $ui.querySelectorAll('[data-htotal]').forEach(e => { e.textContent = mmss(st.totalLeft); });

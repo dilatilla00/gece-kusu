@@ -82,14 +82,14 @@ window.ERA = {
   // choice: chance varsa zar atılır (ok / fail), yoksa hep ok. req: { crew | skill | tool } gerekir.
   // etki: p (başarı şansı), loot (ganimet çarpanına eklenir), time (saniye), heat (takip), fame (ün), abort (işi bırak)
   events: [
-    { id: 'kopek', phase: 0, icon: 'dog', title: 'Köpek havladı', text: 'Bahçenin karanlığından bir hırlama, ardından tok bir havlama yükseliyor.',
+    { id: 'kopek', sfx: 'bark', phase: 0, icon: 'dog', title: 'Köpek havladı', text: 'Bahçenin karanlığından bir hırlama, ardından tok bir havlama yükseliyor.',
       choices: [
         { text: 'Bir parça sucuk at', hint: 'Güvenli', req: { tool: 'sucuk' }, ok: { p: 8, text: 'Köpek sucuğu kaptı, kuyruğunu sallayarak uzaklaştı.' } },
         { text: 'Kıpırdamadan bekle', hint: 'Yavaş', chance: 70, ok: { time: 15, text: 'Köpek bir süre sonra sustu. Kimse uyanmadı.' }, fail: { time: 15, p: -10, heat: 1, text: 'Komşunun ışığı yandı. Pencerede bir yüz belirdi.' } },
         { text: 'Hızla içeri dal', hint: 'Riskli', chance: 35, ok: { time: -15, p: 10, text: 'Köpek daha ne olduğunu anlamadan içerideydin.' }, fail: { p: -20, text: 'Köpek paçana yapıştı. Pantolonun yırtıldı, ses çok çıktı.' } },
         { text: 'Bu gecelik vazgeç', hint: 'Güvenli', ok: { abort: true, text: 'Sessizce geri çekildin. Başka bir gece.' } },
       ] },
-    { id: 'kilit', phase: 0, icon: 'lock', title: 'Kilit sıkıştı', text: 'Maymuncuk kilidin içinde takıldı. Zorlarsan kırılabilir.',
+    { id: 'kilit', sfx: 'jam', phase: 0, icon: 'lock', title: 'Kilit sıkıştı', text: 'Maymuncuk kilidin içinde takıldı. Zorlarsan kırılabilir.',
       choices: [
         { text: 'Kilitçi Nuri halletsin', hint: 'Güvenli', req: { crew: 'nuri' }, ok: { p: 10, time: -10, text: 'Nuri iki saniyede kilidi açtı. "Bilmece çözüldü."' } },
         { text: 'Kilit kırıcıyı kullan', hint: 'Güvenli', req: { tool: 'kilitkirici' }, ok: { p: 6, time: -5, text: 'Kilit kırıcı işini sessizce yaptı.' } },
@@ -97,7 +97,7 @@ window.ERA = {
         { text: 'Zorla', hint: 'Riskli', chance: 40, ok: { time: -15, p: 5, text: 'Kilit pes etti. Zaman kazandın.' }, fail: { p: -15, text: 'Maymuncuk kırıldı, metal sesi gecede yankılandı.' } },
         { text: 'Pencereyi dene', hint: 'Orta', chance: 55, ok: { p: 5, text: 'Pencere sürgüsü açıktı. Kolay oldu.' }, fail: { p: -10, time: 10, text: 'Pencere gıcırdadı. Bir süre beklemek zorunda kaldın.' } },
       ] },
-    { id: 'bekci', phase: 0, icon: 'shield', title: 'Bekçi geliyor', text: 'Sokağın köşesinde bir fener belirdi. Bekçi ıslık çalarak yaklaşıyor.',
+    { id: 'bekci', sfx: 'guard', phase: 0, icon: 'shield', title: 'Bekçi geliyor', text: 'Sokağın köşesinde bir fener belirdi. Bekçi ıslık çalarak yaklaşıyor.',
       choices: [
         { text: 'Kara Ali oyalasın', hint: 'Güvenli', req: { crew: 'ali' }, ok: { p: 10, text: 'Ali bekçiyi kahveye davet etti. Yarım saat gelmezler.' } },
         { text: 'Kloroformlu mendil', hint: 'Güvenli', req: { tool: 'kloroform' }, ok: { p: 10, text: 'Bekçi köşede tatlı bir uykuya daldı.' } },
@@ -105,14 +105,14 @@ window.ERA = {
         { text: 'Gölgeye saklan', hint: 'Orta', chance: 65, ok: { time: 10, text: 'Fener yanından geçti, seni görmedi.' }, fail: { heat: 1, p: -10, text: 'Fener tam yüzüne tutuldu. Koşarak kaçtın, sonra döndün.' } },
         { text: 'Bu gecelik vazgeç', hint: 'Güvenli', ok: { abort: true, text: 'Bekçiyle şansını zorlamadın.' } },
       ] },
-    { id: 'ses', phase: 1, icon: 'ear', title: 'Üst kattan ses', text: 'Üst kattan bir gıcırtı geldi. Sonra yavaş ayak sesleri... Biri uyandı.',
+    { id: 'ses', sfx: 'creakup', phase: 1, icon: 'ear', title: 'Üst kattan ses', text: 'Üst kattan bir gıcırtı geldi. Sonra yavaş ayak sesleri... Biri uyandı.',
       choices: [
         { text: 'Uşak taklidi yap', hint: 'Güvenli', req: { skill: 'tatli' }, ok: { p: 8, text: '"Su getiriyorum efendim" dedin. Ses geri yatağına döndü.' } },
         { text: 'Dolaba saklan', hint: 'Orta', chance: 60, ok: { time: 20, text: 'Ayak sesleri mutfağa gitti, sonra geri döndü. Kurtuldun.' }, fail: { p: -25, text: 'Dolabın kapısı gıcırdadı. "Kim var orada?"' } },
         { text: 'Ne bulduysan al, çık', hint: 'Güvenli', ok: { loot: -0.4, p: 12, text: 'Çantanın yarısı boş ama tenin sağlam.' } },
         { text: 'Sessizce devam et', hint: 'Riskli', chance: 35, ok: { loot: 0.3, text: 'Ayak sesleri durdu. Sen devam ettin, hatta biraz fazlasını buldun.' }, fail: { p: -20, heat: 1, text: 'Merdivende bir şamdan belirdi. Koşmak zorunda kaldın.' } },
       ] },
-    { id: 'kasa', phase: 1, icon: 'lock-square', title: 'Gizli bölme', text: 'Halının altında bir kapak buldun. Altında küçük, kilitli bir kasa duruyor.',
+    { id: 'kasa', sfx: 'safe', phase: 1, icon: 'lock-square', title: 'Gizli bölme', text: 'Halının altında bir kapak buldun. Altında küçük, kilitli bir kasa duruyor.',
       choices: [
         { text: 'Yorgo açsın', hint: 'Güvenli', req: { crew: 'yorgo' }, ok: { loot: 0.5, time: 10, text: 'Yorgo kulağını kasaya dayadı. Üç tık, kapak açıldı.' } },
         { text: 'Stetoskopla dinle', hint: 'Güvenli', req: { tool: 'stetoskop' }, ok: { loot: 0.4, time: 15, text: 'Çarkların sesi tek tek duyuldu. Kasa açıldı.' } },
@@ -120,32 +120,32 @@ window.ERA = {
         { text: 'Kasayı komple götür', hint: 'Cesur', ok: { loot: 0.3, p: -15, text: 'Kasa ağır. Çok ağır.' } },
         { text: 'Dokunma', hint: 'Güvenli', ok: { text: 'Açgözlülük hırsızın sonunu getirir. Devam ettin.' } },
       ] },
-    { id: 'tablo', phase: 1, icon: 'photo', title: 'Değerli bir tablo', text: 'Duvarda yağlıboya bir tablo. Çantadakilerin iki katı eder ama büyük, taşıması zor.',
+    { id: 'tablo', sfx: 'sparkle', phase: 1, icon: 'photo', title: 'Değerli bir tablo', text: 'Duvarda yağlıboya bir tablo. Çantadakilerin iki katı eder ama büyük, taşıması zor.',
       choices: [
         { text: 'Çerçeveden kesip rulo yap', hint: 'Yavaş', ok: { loot: 0.4, time: 25, text: 'Tuval dikkatle kesildi, rulo yapılıp ceketin içine girdi.' } },
         { text: 'Çerçevesiyle al', hint: 'Cesur', ok: { loot: 0.6, p: -15, text: 'Tablo kolunun altında. Kaçarken zorlayacak.' } },
         { text: 'Bırak', hint: 'Güvenli', ok: { text: 'Güzel bir tablo. Sahibi uzun yıllar baksın.' } },
       ] },
-    { id: 'kedi', phase: 1, icon: 'cat', title: 'Kedi vazoyu devirdi', text: 'Raftan bir kedi atladı. Porselen vazo sallanıyor, düşmek üzere.',
+    { id: 'kedi', sfx: 'catvase', phase: 1, icon: 'cat', title: 'Kedi vazoyu devirdi', text: 'Raftan bir kedi atladı. Porselen vazo sallanıyor, düşmek üzere.',
       choices: [
         { text: 'Vazoyu yakalamaya atıl', hint: 'Orta', chance: 55, ok: { p: 5, text: 'Son anda yakaladın. Kalbin ağzında.' }, fail: { p: -20, heat: 1, text: 'Vazo yere çarptı, bütün ev uyandı.' } },
         { text: 'Hemen çık', hint: 'Güvenli', ok: { loot: -0.3, time: -20, p: 8, text: 'Vazonun sesini duymadan bahçedeydin.' } },
         { text: 'Kedinin yiyeceğini göster', hint: 'Orta', chance: 70, ok: { text: 'Kedi vazoyu unutup mutfağa koştu.' }, fail: { p: -10, text: 'Kedi tısladı, vazo devrildi. Neyse ki halıya düştü.' } },
       ] },
-    { id: 'mektup', phase: 1, icon: 'mail', title: 'Mühürlü mektuplar', text: 'Masada mühürlü mektuplar var. Birinin üstünde "Mahrem" yazıyor.',
+    { id: 'mektup', sfx: 'paper', phase: 1, icon: 'mail', title: 'Mühürlü mektuplar', text: 'Masada mühürlü mektuplar var. Birinin üstünde "Mahrem" yazıyor.',
       choices: [
         { text: 'Aç ve oku', hint: 'Yavaş', chance: 50, ok: { loot: 0.25, time: 15, text: 'İçinden banknotlar çıktı. Biri birine rüşvet gönderiyormuş.' }, fail: { time: 15, text: 'Sıradan aile mektupları. Zaman kaybı.' } },
         { text: 'Yerine imzalı kartvizit bırak', hint: 'Cesur', ok: { fame: 3, p: -5, text: 'Yarın gazeteler bunu yazacak.' } },
         { text: 'Dokunma', hint: 'Güvenli', ok: { text: 'Başkasının sırrı başkasınındır.' } },
       ] },
-    { id: 'alarm', phase: 1, tiers: ['magaza', 'muze'], icon: 'bell-ringing', title: 'Alarm çalmaya başladı', text: 'Vitrin camına dokunduğun an bir zil çınlamaya başladı!',
+    { id: 'alarm', sfx: 'alarmbell', phase: 1, tiers: ['magaza', 'muze'], icon: 'bell-ringing', title: 'Alarm çalmaya başladı', text: 'Vitrin camına dokunduğun an bir zil çınlamaya başladı!',
       choices: [
         { text: 'Zil susturucuyu tak', hint: 'Güvenli', req: { tool: 'zil' }, ok: { p: 10, text: 'Zil boğuk bir tıkırtıyla sustu.' } },
         { text: 'Zil telini kes', hint: 'Güvenli', req: { skill: 'alarmsok' }, ok: { p: 10, text: 'Tel kesildi, zil sustu. Kimse gelmedi.' } },
         { text: 'Hızla topla ve kaç', hint: 'Orta', ok: { loot: -0.3, time: -30, p: -5, text: 'Ne aldıysan aldın, koştun.' } },
         { text: 'Saklan ve bekle', hint: 'Riskli', chance: 35, ok: { time: 30, text: 'Bekçi gelip baktı, arıza sandı, gitti.' }, fail: { p: -25, heat: 1, text: 'Bekçi seni gördü. Şimdi hızlı olmak lazım.' } },
       ] },
-    { id: 'duduk', phase: 2, icon: 'speakerphone', title: 'Düdük sesi', text: 'Sokağın başından bir düdük öttü. Biri "Hırsız var!" diye bağırıyor.',
+    { id: 'duduk', sfx: 'whistle2', phase: 2, icon: 'speakerphone', title: 'Düdük sesi', text: 'Sokağın başından bir düdük öttü. Biri "Hırsız var!" diye bağırıyor.',
       choices: [
         { text: 'Leon arabayı getirsin', hint: 'Güvenli', req: { crew: 'leon' }, ok: { p: 15, text: 'Leon köşeyi döndü, kapıyı açtı. "Atla!"' } },
         { text: 'Pelerinle gölgelere karış', hint: 'Güvenli', req: { tool: 'pelerin' }, ok: { p: 10, text: 'Pelerin seni duvarın bir parçası yaptı. Düdük uzaklaştı.' } },
@@ -153,14 +153,14 @@ window.ERA = {
         { text: 'Kalabalığa karış', hint: 'Orta', chance: 60, ok: { text: 'Kahveden çıkanların arasına karıştın, kimse fark etmedi.' }, fail: { p: -15, text: 'Biri kolundan tuttu. Zor kurtuldun.' } },
         { text: 'Ganimetin bir kısmını bırak', hint: 'Güvenli', ok: { loot: -0.3, p: 10, text: 'Hafifleyen çantayla daha hızlı koştun.' } },
       ] },
-    { id: 'kapi', phase: 2, icon: 'door', title: 'Kapı kilitlenmiş', text: 'Girdiğin kapı dışarıdan kilitlenmiş. Biri seni fark etmiş olabilir.',
+    { id: 'kapi', sfx: 'handle', phase: 2, icon: 'door', title: 'Kapı kilitlenmiş', text: 'Girdiğin kapı dışarıdan kilitlenmiş. Biri seni fark etmiş olabilir.',
       choices: [
         { text: 'Halatla pencereden in', hint: 'Güvenli', req: { tool: 'halat' }, ok: { p: 5, time: -5, text: 'Halat kancası pervaza takıldı, sessizce aşağı süzüldün.' } },
         { text: 'Pencereden atla', hint: 'Riskli', chance: 45, ok: { time: -5, text: 'Çiçek tarhına düştün ama yürüyebiliyorsun.' }, fail: { p: -15, text: 'Ayağın burkuldu. Kaçış yavaşladı.' } },
         { text: 'Kilidi içeriden aç', hint: 'Orta', chance: 70, ok: { time: 15, text: 'Kilit içeriden kolay açıldı.' }, fail: { time: 15, p: -10, text: 'Kilit dirense de sonunda açıldı. Ama gürültü oldu.' } },
         { text: 'Arka geçidi ara', hint: 'Yavaş', ok: { time: 25, p: 8, text: 'Kömürlükten bir çıkış buldun. Kimse görmedi.' } },
       ] },
-    { id: 'tanik', phase: 2, icon: 'eye', title: 'Bir tanık', text: 'Karşı evin penceresinde bir çocuk seni izliyor.',
+    { id: 'tanik', sfx: 'witness', phase: 2, icon: 'eye', title: 'Bir tanık', text: 'Karşı evin penceresinde bir çocuk seni izliyor.',
       choices: [
         { text: 'Küçük Hasan halletsin', hint: 'Güvenli', req: { crew: 'hasan' }, ok: { p: 6, text: 'Hasan çocuğa şeker uzattı. "Biz hiç burada değildik."' } },
         { text: 'Şapkanı çıkarıp selam ver', hint: 'Cesur', chance: 55, ok: { fame: 2, text: 'Çocuk gülümseyip el salladı. Yarın herkese anlatacak.' }, fail: { fame: 2, heat: 1, text: 'Çocuk annesini çağırdı. Ama yüzünü unutmayacak.' } },
