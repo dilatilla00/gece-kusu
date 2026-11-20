@@ -69,9 +69,9 @@ https://appstoreconnect.apple.com → **Uygulamalar** → **+** → **Yeni Uygul
 | Alan | Değer |
 |---|---|
 | Kategori | Oyunlar → Simülasyon (ikincil: Strateji) |
-| Destek URL'si | https://dilatilla00.github.io/gece-kusu/support.html |
-| Gizlilik politikası URL'si | https://dilatilla00.github.io/gece-kusu/privacy.html |
-| Pazarlama URL'si (isteğe bağlı) | https://dilatilla00.github.io/gece-kusu/ |
+| Destek URL'si | https://dilatilla00.github.io/kibar-hirsiz/support.html |
+| Gizlilik politikası URL'si | https://dilatilla00.github.io/kibar-hirsiz/privacy.html |
+| Pazarlama URL'si (isteğe bağlı) | https://dilatilla00.github.io/kibar-hirsiz/ |
 | Telif hakkı | 2026 (senin adın) |
 | Fiyat | Ücretsiz (ya da sen nasıl istersen) |
 
