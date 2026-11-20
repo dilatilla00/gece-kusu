@@ -202,12 +202,15 @@
   // Alet ekranı
   function scrAlet() {
     const S = G.s;
-    return `<div class="page scroll"><div class="page-h"><div><h1>Aletler</h1><p>Bir kere alırsın, her işte yanında taşırsın.</p></div><div class="sp-chip">${ic('coins', 'au')} <b>${fmt(S.money)}</b> ${E.currency}</div></div>
+    return `<div class="page scroll"><div class="page-h"><div><h1>Aletler</h1><p>Aletlerini her işte yanında taşırsın.</p></div><div class="sp-chip">${ic('coins', 'au')} <b>${fmt(S.money)}</b> ${E.currency}</div></div>
+      <p class="mini" style="white-space:normal;margin:-6px 0 14px">${ic('info-circle')}Aletler bir işte işe yararsa yıpranır; bazen kırılır. Kırılan aleti buradan yeniden alabilirsin.</p>
       <div class="shop">${E.tools.map(t => {
         const own = S.tools.includes(t.id);
         const btn = own ? `<button class="buy off">${ic('check')}Sende var</button>`
           : `<button class="buy ${S.money < t.price ? 'off' : ''}" data-buy="${t.id}">${ic('coins')}${fmt(t.price)} ${E.currency}</button>`;
-        return `<div class="item ${own ? 'owned' : ''}"><div class="hd"><div class="ic">${ic(t.icon)}</div><div><div class="nm">${t.name}</div><div class="ds">${t.desc}</div></div></div>${btn}</div>`;
+        const wear = t.uses ? `<div class="mini wear">${ic('refresh')}Tek kullanımlık · her işte biter</div>`
+          : t.brk ? `<div class="mini wear">${ic('hammer')}Kullanıldığı işte %${Math.round(t.brk * 100)} kırılma ihtimali</div>` : '';
+        return `<div class="item ${own ? 'owned' : ''}"><div class="hd"><div class="ic">${ic(t.icon)}</div><div><div class="nm">${t.name}</div><div class="ds">${t.desc}</div></div></div>${wear}${btn}</div>`;
       }).join('')}</div></div>`;
   }
 
@@ -368,6 +371,8 @@
         ${r.secUp ? `<div class="mini" style="justify-content:center;margin:-6px 0 12px;white-space:normal">${ic('shield-lock')}${r.target.name} artık daha korunaklı: bir dahaki sefere daha zor, daha kârlı.</div>` : ''}
         ${r.safe ? `<div class="mini" style="justify-content:center;margin:-6px 0 12px">${ic('route', 'ok')}Kaçış planı sayesinde kimse seni fark etmedi.</div>` : ''}
         ${r.used && r.used.length ? `<div class="mini" style="justify-content:center;margin:-6px 0 12px;white-space:normal">${ic('building-warehouse')}Kullanıldı: ${r.used.join(', ')}</div>` : ''}
+        ${(r.usedUp || []).length ? `<div class="mini" style="justify-content:center;margin:-6px 0 12px;white-space:normal">${ic('tool')}Bitti: ${r.usedUp.map(x => x.name).join(', ')}</div>` : ''}
+        ${(r.broken || []).map(x => `<div class="lvup broke">${ic('hammer')} ${x.name} kırıldı! Aletler'den yenisini alabilirsin.</div>`).join('')}
         ${r.log && r.log.length ? `<div class="evlog"><div class="src">GECENİN OLAYLARI</div>${r.log.map(l => `<div class="fr">${ic(l.roll ? (l.ok ? 'circle-check' : 'alert-triangle') : 'point', l.roll ? (l.ok ? 'ok' : 'no') : 'mu')}<span><b>${l.title}:</b> ${l.choice}</span></div>`).join('')}</div>` : ''}
         ${r.news ? `<div class="clip"><div class="src">ERTESİ SABAH · ${E.labels.newspaper.toUpperCase()}</div><div class="h">${r.news.h}</div><div class="b">${r.news.b}</div></div>` : ''}
         ${adBtn('double', `Ganimeti ikiye katla · +${fmt(r.loot || 0)} ${E.currency}`, r)}

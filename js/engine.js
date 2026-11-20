@@ -208,12 +208,28 @@
     });
     return out;
   }
+  // Aletler: bu işte gerçekten işe yarayanlar not edilir; iş bitince tek kullanımlıklar biter, diğerleri kırılabilir.
+  function toolHelps(tl, t) {
+    return tl.effects.some(e => e.kind === 'cancel' ? t.factors.some(f => f.tag === e.tag)
+      : e.kind === 'bonus' ? (!e.tiers || e.tiers.includes(t.tier)) : true);
+  }
+  function wearTools(h) {
+    const usedUp = [], broken = [];
+    (h.tools || []).forEach(id => {
+      const tl = toolById[id];
+      if (!tl || !S.tools.includes(id)) return;
+      if (tl.uses) { S.tools = S.tools.filter(x => x !== id); usedUp.push(tl); }
+      else if (tl.brk && Math.random() < tl.brk) { S.tools = S.tools.filter(x => x !== id); broken.push(tl); }
+    });
+    return { usedUp, broken };
+  }
   function startHeist(id) {
     const t = targetById[id];
     if (S.heist || !t || !targetOpen(t) || cooldownLeft(t) > 0 || cityOf(t) !== S.city) return false;
     const times = heistTimes(t).slice();
     S.heist = {
       id, start: Date.now(), times, events: scheduleEvents(t, times), log: [],
+      tools: S.tools.filter(x => { const tl = toolById[x]; return tl && (tl.uses || toolHelps(tl, t)); }),
       snap: { p: odds(t).p, loot: lootMult(), xp: 1 + buffSum('xpBoost'), safe: buffSum('safeFail') > 0, used: S.buffs.map(b => itemById[b].name) },
     };
     S.buffs = [];
@@ -268,13 +284,14 @@
     const fx = (ok ? c.ok : c.fail) || {};
     pe.done = true;
     h.start = Date.now() - pe.at * 1000; // sayaç olayın olduğu yerden devam eder
+    if (c.req && c.req.tool) { h.tools = h.tools || []; if (!h.tools.includes(c.req.tool)) h.tools.push(c.req.tool); }
     const out = { event: ev, choice: c, ok, fx };
     h.log.push({ title: ev.title, choice: c.text, text: fx.text, ok, roll: c.chance != null });
     if (fx.abort) {
       S.heist = null; S.day++;
       const t = targetById[h.id], xp = Math.round(t.xp / 6);
       S.xp += xp;
-      out.result = { aborted: true, target: t, xp, log: h.log, levelUps: levelUps(), lv: S.lv, used: h.snap.used };
+      out.result = { aborted: true, target: t, xp, log: h.log, levelUps: levelUps(), lv: S.lv, used: h.snap.used, ...wearTools(h) };
       save(); return out;
     }
     if (fx.p) h.snap.p = Math.max(5, Math.min(95, h.snap.p + fx.p));
@@ -301,6 +318,7 @@
     const h = S.heist; S.heist = null;
     const res = resolve(h.id, h.snap);
     res.log = h.log;
+    Object.assign(res, wearTools(h)); save();
     return res;
   }
   // Hızlandırma bir sonraki olaya ya da işin sonuna atlar.

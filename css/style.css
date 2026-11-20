@@ -399,3 +399,6 @@ button { font-family: inherit; color: inherit; }
 .game.fit .modal:has(.packs) { padding: 16px 18px; }
 .game.fit .modal:has(.packs) .big { display: none; }
 .game.fit .modal:has(.packs) p { margin: 4px 0 12px; }
+/* Alet yıpranması */
+.item .wear { margin: -2px 0 8px; white-space: normal; }
+.lvup.broke { background: #ff6b5b1a; color: var(--no); border-color: #ff6b5b55; }
