@@ -2,7 +2,7 @@
 (function () {
   const G = window.Game, E = G.E;
   const $ui = document.getElementById('ui'), $layer = document.getElementById('layer');
-  const ui = { screen: 'hedef', tier: E.tiers[0].id, sel: null, modal: G.s.stats.robs === 0 ? { type: 'intro' } : null };
+  const ui = { screen: 'hedef', tier: E.tiers[0].id, sel: null, modal: G.s.stats.robs === 0 && !(G.s.seen || {}).intro ? { type: 'intro' } : null };
 
   const fmt = n => Math.round(n).toLocaleString('tr-TR');
   const mmss = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -19,7 +19,7 @@
     const seed = [...type].reduce((a, c) => a + c.charCodeAt(0), 0);
     const stars = Array.from({ length: 7 }, (_, i) =>
       `<circle cx="${(seed * 37 + i * 53) % 200}" cy="${(seed * 13 + i * 29) % 30 + 3}" r="${i % 3 ? .8 : 1.2}" fill="#fff" opacity="${P.st}"/>`).join('');
-    const mx = 172 - (seed % 40);
+    const mx = 118 - (seed % 30); // şans rozetinin arkasına girmesin
     return `<svg viewBox="0 0 200 72" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><rect width="200" height="72" fill="${P.sky}"/>${stars}<circle cx="${mx}" cy="14" r="7" fill="${P.moon}"/><circle cx="${mx + 3}" cy="12" r="6" fill="${P.sky}"/>${draw(P)}<rect y="68" width="200" height="4" fill="${P.bl}"/></svg>`;
   }
 
@@ -477,20 +477,24 @@
         case 'askreset': ui.modal = { type: 'reset' }; break;
         case 'reset': G.reset(); Object.assign(ui, { screen: 'hedef', tier: E.tiers[0].id, sel: null, modal: { type: 'intro' } }); break;
         case 'dismiss': if (ui.modal && G.dismiss(ui.modal.id)) toast(`${ic('user-minus')}${G.crewById[ui.modal.id].name} ekipten ayrıldı`); ui.modal = null; break;
-        case 'close': ui.modal = null; break;
+        case 'close': if (ui.modal && ui.modal.type === 'intro') G.markSeen('intro'); ui.modal = null; break;
       }
     }
     render();
   });
 
   // Soygun sayacı: aşama değişince yeniden çiz, arada sadece süreleri güncelle.
-  let lastPhase = null;
+  let lastPhase = null, lastAfford = null;
   setInterval(() => {
     const st = G.heistStatus();
     if (!st) { lastPhase = null; return; }
-    if (st.done) { const r = G.finishHeist(); lastPhase = null; if (r) { ui.modal = { type: 'result', r }; render(); } return; }
+    if (st.done) {
+      if (ui.modal && ui.modal.type === 'outcome') return; // oyuncu olayın sonucunu okusun, sonra sonuç gelsin
+      const r = G.finishHeist(); lastPhase = null; lastAfford = null; if (r) { ui.modal = { type: 'result', r }; render(); } return;
+    }
     if (st.pending) { if (!ui.modal || (ui.modal.type !== 'event' && ui.modal.type !== 'outcome')) { ui.modal = { type: 'event' }; render(); } return; }
-    if (st.phase !== lastPhase) { lastPhase = st.phase; render(); return; }
+    const afford = G.s.gems >= G.rushCost();
+    if (st.phase !== lastPhase || afford !== lastAfford) { lastPhase = st.phase; lastAfford = afford; render(); return; }
     $ui.querySelectorAll('[data-htotal]').forEach(e => { e.textContent = mmss(st.totalLeft); });
     $ui.querySelectorAll('[data-hleft]').forEach(e => { e.textContent = mmss(st.phaseLeft); });
     $ui.querySelectorAll('[data-hbar]').forEach(e => { e.style.width = Math.round(st.phaseProg * 100) + '%'; });

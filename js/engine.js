@@ -35,6 +35,8 @@
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { /* tarayıcı izin vermezse sessizce geç */ } }
   function reset() { S = fresh(); save(); }
+  // Tek seferlik şeyleri (örn. karşılama penceresi) hatırla
+  function markSeen(key) { S.seen = S.seen || {}; S.seen[key] = true; save(); }
 
   const LL = E.lateLevel || { from: 1e9, growth: 0 };
   const xpCap = lv => Math.round(60 * Math.pow(lv, 1.65) * (lv > LL.from ? 1 + (lv - LL.from) * LL.growth : 1));
@@ -511,6 +513,6 @@
     xpCap, tierOpen, targetOpen, cooldownLeft, scoutCost, requirements, odds, dateOf,
     quest, questDone, claimQuest, skillState,
     pickPattern, rob, startHeist, heistStatus, finishHeist, rushCost, rush, heistTimes, choose, choiceChance, choicePenalty, choiceOpen, reqText, rushTarget,
-    scout, rest, bribe, learn, buy, reset,
+    scout, rest, bribe, learn, buy, reset, markSeen,
   };
 })();
