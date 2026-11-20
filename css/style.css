@@ -378,3 +378,24 @@ button { font-family: inherit; color: inherit; }
 .adtest .adclose { color: #222; border-color: #ccc; }
 .adtest .adclose:disabled { opacity: .5; cursor: default; }
 .adtest .adskip { color: #777; }
+
+/* Elmas satın alma */
+.res.gembuy { cursor: pointer; font-family: inherit; color: inherit; padding-right: 4px; }
+.res.gembuy .plus { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 6px; background: var(--gem); color: #0d1630; margin-left: 2px; }
+.res.gembuy .plus .ti { font-size: 13px; }
+.res.gembuy:hover { border-color: var(--gem); }
+.packs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin: 4px 0 12px; }
+.pack { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 6px 10px; border-radius: 12px; border: 1px solid var(--ln); background: var(--bg); color: var(--tx); cursor: pointer; font-family: inherit; }
+.pack:hover { border-color: var(--gem); }
+.pack.best { border-color: var(--au); box-shadow: 0 0 0 1px var(--au) inset; }
+.pack .ptag { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 9px; font-weight: 600; background: var(--au); color: #2a1d00; border-radius: 6px; padding: 1px 6px; }
+.pack .pic { font-size: 30px; line-height: 1; margin: 2px 0; }
+.pack .pn { font-size: 11px; color: var(--mu); text-align: center; }
+.pack .pg { display: flex; flex-direction: column; align-items: center; font-weight: 600; font-size: 16px; }
+.pack .pg .ti { font-size: 13px; }
+.pack .pg em { font-style: normal; font-size: 10px; font-weight: 500; color: var(--ok); }
+.pack .pp { margin-top: 4px; width: 100%; background: var(--gem); color: #0d1630; border-radius: 8px; padding: 6px 0; font-weight: 600; font-size: 13px; }
+.modal:has(.packs) { width: min(560px, 100%); }
+.game.fit .modal:has(.packs) { padding: 16px 18px; }
+.game.fit .modal:has(.packs) .big { display: none; }
+.game.fit .modal:has(.packs) p { margin: 4px 0 12px; }

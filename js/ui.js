@@ -12,6 +12,7 @@
   // Ödüllü reklam düğmesi: reklamlar kapalıysa ya da ödül şu an alınamıyorsa hiç görünmez.
   const adBtn = (key, label, res) => (window.Ads && Ads.enabled() && G.canAd(key, res))
     ? `<button class="b2 adbtn" data-ad="${key}">${ic('player-play')}<span>${label}</span><span class="adtag">Reklam</span></button>` : '';
+  const shopOn = () => window.Shop && Shop.enabled();
   const diff = p => p >= 70 ? ['Kolay', 'ok', '#3ccf8e22'] : p >= 45 ? ['Orta', 'wa', '#ffb54722'] : ['Zor', 'no', '#ff6b5b22'];
 
   function scene(type, mode) {
@@ -64,7 +65,7 @@
       <div class="ava">${ic(E.heroIcon)}<span class="lv">Sv ${S.lv}</span></div>
       <div class="who"><div class="nm">${E.hero}</div><div class="bar"><i style="width:${Math.round(S.xp / cap * 100)}%"></i></div><div class="xt">${fmt(S.xp)} / ${fmt(cap)} tecrübe</div></div>
       <div class="res" title="Para">${ic('coins', 'au')}${fmt(S.money)}</div>
-      <div class="res" title="Elmas">${ic('diamond', 'gem')}${S.gems}</div>
+      ${shopOn() ? `<button class="res gembuy" data-act="shop" title="Elmas al" aria-label="Elmas al">${ic('diamond', 'gem')}${S.gems}<span class="plus">${ic('plus')}</span></button>` : `<div class="res" title="Elmas">${ic('diamond', 'gem')}${S.gems}</div>`}
       <div class="res fame" title="Ün">${ic('star', 'au')}${S.fame}</div>
       <div class="res" title="${G.heatLabel()}">${ic('urgent', 'no')}${S.heat}/5</div>
       ${hchip()}
@@ -428,6 +429,19 @@
           : `<button class="b2 ${skip ? '' : 'off'}" ${skip ? 'data-act="skipquest"' : ''}>${ic('refresh')}Başka görev</button><button class="b1" data-act="close">Tamam</button>`}</div>
         ${done ? '' : adBtn('skip', 'Bir kez daha görev değiştir')}`;
     }
+    if (m.type === 'shop') {
+      const S = G.s, packs = Shop.packs;
+      inner = `<div class="big" style="background:var(--gem);color:#0d1630">${ic('diamond')}</div><h2>${E.gemName[0].toLocaleUpperCase('tr-TR') + E.gemName.slice(1)} al</h2>
+        <p>Elmasla soygunları hızlandırır, komisere rüşvet verir, karaborsadan özel mallar alırsın. Şu an <b style="color:var(--gem)">${S.gems}</b> elmasın var.</p>
+        <div class="packs">${packs.map((p, i) => `<button class="pack ${p.best ? 'best' : ''}" data-gempack="${i}">
+          ${p.best ? '<span class="ptag">En çok tercih edilen</span>' : ''}
+          <span class="pic">${ic(p.icon, 'gem')}</span>
+          <span class="pn">${p.name}</span>
+          <span class="pg">${ic('diamond', 'gem')}${p.gems}${p.bonus ? `<em>+${p.bonus} hediye</em>` : ''}</span>
+          <span class="pp">${p.price}</span></button>`).join('')}</div>
+        ${adBtn('gem', `Reklam izle, bedava 1 ${E.gemName}`)}
+        <button class="b2" data-act="close" style="margin:6px 0 0">Kapat</button>`;
+    }
     if (m.type === 'menu') {
       inner = `<h2>Ayarlar</h2><p>${E.title} · ${G.dateOf(G.s.day)}</p>
         <button class="b2" data-act="askreset">${ic('refresh')}Yeni oyun başlat</button><button class="b1" data-act="close">Kapat</button>`;
@@ -479,11 +493,28 @@
     });
   }
 
+  // Elmas paketi satın al: mağaza onaylarsa elmaslar eklenir.
+  let payBusy = false;
+  function buyPack(i) {
+    if (payBusy || !shopOn()) return;
+    const p = Shop.packs[i]; if (!p) return;
+    payBusy = true;
+    Shop.buy(i).then(ok => {
+      payBusy = false;
+      if (!ok) { toast(`${ic('x', 'mu')}Satın alma tamamlanmadı`); return; }
+      G.addGems(p.gems + p.bonus);
+      ui.modal = null;
+      toast(`${ic('diamond', 'gem')}+${p.gems + p.bonus} ${E.gemName} hesabına eklendi`);
+      render();
+    });
+  }
+
   $ui.addEventListener('click', e => {
-    const el = e.target.closest('[data-ad],[data-go],[data-tier],[data-sel],[data-act],[data-learn],[data-buy],[data-hire],[data-train],[data-dismiss],[data-mbuy],[data-choice],[data-mastery],[data-city]');
+    const el = e.target.closest('[data-gempack],[data-ad],[data-go],[data-tier],[data-sel],[data-act],[data-learn],[data-buy],[data-hire],[data-train],[data-dismiss],[data-mbuy],[data-choice],[data-mastery],[data-city]');
     if (!el) return;
     const d = el.dataset;
     if (d.ad) { watchAd(d.ad); return; }
+    if (d.gempack) { buyPack(+d.gempack); return; }
     if (d.go) { ui.screen = d.go; ui.modal = null; }
     else if (d.tier) { ui.tier = d.tier; ui.sel = null; }
     else if (d.sel) { ui.sel = d.sel; }
@@ -519,6 +550,7 @@
         case 'sellgem': if (G.sellGem()) toast(`${ic('diamond', 'gem')}Bir elmas bozuldu`); break;
         case 'buygem': if (G.buyGem()) toast(`${ic('diamond', 'gem')}Bir elmas alındı`); break;
         case 'menu': ui.modal = { type: 'menu' }; break;
+        case 'shop': ui.modal = { type: 'shop' }; break;
         case 'askreset': ui.modal = { type: 'reset' }; break;
         case 'reset': G.reset(); Object.assign(ui, { screen: 'hedef', tier: E.tiers[0].id, sel: null, modal: { type: 'intro' } }); break;
         case 'dismiss': if (ui.modal && G.dismiss(ui.modal.id)) toast(`${ic('user-minus')}${G.crewById[ui.modal.id].name} ekipten ayrıldı`); ui.modal = null; break;

@@ -167,6 +167,8 @@
     if (k === 'skip') { const day = S.quest.skipDay; nextQuest(); S.quest.skipDay = day; markAd('skip'); out = quest(); }
     save(); return out;
   }
+  // Satın alınan elmaslar (mağaza onayladıktan sonra çağrılır)
+  function addGems(n) { if (!(n > 0)) return false; S.gems += n; S.stats.bought = (S.stats.bought || 0) + n; save(); return true; }
   function claimQuest() {
     if (!questDone()) return null;
     const r = quest().reward;
@@ -546,7 +548,7 @@
     market, marketState, buyMarket, gemRates, sellGem, buyGem, activeBuffs, immediate,
     crewSlots, crewCount, crewCut, crewState, trainCost, hire, train, dismiss,
     xpCap, tierOpen, targetOpen, cooldownLeft, scoutCost, requirements, odds, dateOf,
-    quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest, canAd, adReward,
+    quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest, canAd, adReward, addGems,
     pickPattern, rob, startHeist, heistStatus, finishHeist, rushCost, rush, heistTimes, choose, choiceChance, choicePenalty, choiceOpen, reqText, rushTarget,
     scout, rest, bribe, learn, buy, reset, markSeen,
   };

@@ -131,3 +131,19 @@ Oyunda 5 ödüllü reklam noktası hazır; ilk sürümde hiçbiri görünmez.
 - Tarayıcıda denemek için adresin sonuna `?ads=test` ekle; kapatmak için `?ads=off`.
 - Gerçek reklam için iOS tarafına Google AdMob eklenip `ads` mesajı dinlenecek; reklam bitince `window.Ads._done(id, true)` çağrılacak.
 - Reklamlar açılınca gizlilik politikası, App Store gizlilik beyanı ve izleme izni (ATT) güncellenmeli.
+
+## Elmas satın alma (hazır, şu an kapalı)
+
+Üst çubuktaki elmas kutusunun yanındaki **+** düğmesi elmas mağazasını açar. İlk sürümde gizli.
+
+| Paket | Elmas | Hediye | Ürün kimliği (App Store Connect) | Öneri fiyat |
+|---|---|---|---|---|
+| Bir avuç elmas | 10 | — | com.dilatilla.kibarhirsiz.gems10 | ₺49,99 |
+| Elmas kesesi | 30 | +3 | com.dilatilla.kibarhirsiz.gems30 | ₺129,99 |
+| Elmas sandığı | 80 | +15 | com.dilatilla.kibarhirsiz.gems80 | ₺299,99 |
+| Saray hazinesi | 200 | +50 | com.dilatilla.kibarhirsiz.gems200 | ₺649,99 |
+
+- Mod `js/shop.js` içindeki `MODE` ile seçilir: `off`, `test` (sahte ödeme), `on` (gerçek ödeme).
+- Tarayıcıda denemek için `?shop=test`; kapatmak için `?shop=off`.
+- Gerçek satış için: App Store Connect'te **Paid Apps** sözleşmesi, vergi ve banka bilgileri; yukarıdaki 4 ürünü **Consumable (tüketilebilir)** olarak açmak; iOS tarafına StoreKit eklenip `store` mesajını dinlemek ve satın alma bitince `window.Shop._done(id, true)` çağırmak.
+- Elmas satın alma oyunda sadece hızı ve kolaylığı artırır; her şey satın almadan da kazanılabilir.
