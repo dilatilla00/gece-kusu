@@ -66,8 +66,8 @@
       <div class="res" title="${G.heatLabel()}">${ic('urgent', 'no')}${S.heat}/5</div>
       ${hchip()}
       <div class="quest" title="Görev">
-        <div style="min-width:0"><div class="qt">${q.text}</div><div class="bar qb"><i style="width:${Math.round(prog / q.n * 100)}%"></i></div></div>
-        <span class="mini">${fmt(prog)}/${fmt(q.n)}</span>
+        <div class="qopen" data-act="quest" role="button" aria-label="Görev ayrıntıları"><div style="min-width:0"><div class="qt">${q.text}</div><div class="bar qb"><i style="width:${Math.round(prog / q.n * 100)}%"></i></div></div>
+        <span class="mini">${fmt(prog)}/${fmt(q.n)}</span></div>
         <button class="gift ${done ? 'ready' : ''}" ${done ? 'data-act="claim"' : ''} aria-label="Görev ödülü">${ic('gift')}</button>
       </div>
       <button class="icon-btn" data-act="menu" aria-label="Ayarlar">${ic('settings')}</button>
@@ -407,6 +407,18 @@
         <div class="stat" style="margin-bottom:16px"><span>${E.travelLabel || 'Yol'}</span><b>${fmt(c.cost || 0)} ${E.currency}</b></div>
         <div class="btn-row"><button class="b2" data-act="close">Vazgeç</button>${st === 'buy' ? `<button class="b1" data-act="travel">Yola çık</button>` : `<button class="b1 off">${st === 'locked' ? 'Seviye ' + c.lv : 'Yeterli para yok'}</button>`}</div>`;
     }
+    if (m.type === 'quest') {
+      const S = G.s, q = G.quest(), done = G.questDone(), prog = Math.min(S.quest.prog, q.n), r = q.reward;
+      const skip = G.canSkipQuest();
+      inner = `<div class="big" style="background:var(--au);color:#2a1d00">${ic('gift')}</div><div class="mini" style="justify-content:center;margin-bottom:4px">GÖREV</div><h2>${q.text}</h2>
+        <div class="bar" style="height:8px;margin:14px 0 6px"><i style="width:${Math.round(prog / q.n * 100)}%"></i></div>
+        <div class="mini" style="justify-content:center;margin-bottom:14px">${fmt(prog)} / ${fmt(q.n)}</div>
+        <div class="chips">${r.money ? `<div class="rw">${ic('coins', 'au')} +${fmt(r.money)} ${E.currency}</div>` : ''}${r.gems ? `<div class="rw">${ic('diamond', 'gem')} +${r.gems} ${E.gemName}</div>` : ''}</div>
+        ${done ? '' : `<p class="mini" style="justify-content:center;white-space:normal;margin:0 0 14px">${skip ? 'Bu görev sana göre değilse başka bir görev isteyebilirsin. Her gece bir kez.' : 'Bu gece görev değiştirme hakkını kullandın. Yarın yeniden isteyebilirsin.'}</p>`}
+        <div class="btn-row">${done
+          ? `<button class="b2" data-act="close">Kapat</button><button class="b1" data-act="claim">Ödülü al</button>`
+          : `<button class="b2 ${skip ? '' : 'off'}" ${skip ? 'data-act="skipquest"' : ''}>${ic('refresh')}Başka görev</button><button class="b1" data-act="close">Tamam</button>`}</div>`;
+    }
     if (m.type === 'menu') {
       inner = `<h2>Ayarlar</h2><p>${E.title} · ${G.dateOf(G.s.day)}</p>
         <button class="b2" data-act="askreset">${ic('refresh')}Yeni oyun başlat</button><button class="b1" data-act="close">Kapat</button>`;
@@ -470,7 +482,9 @@
         case 'scout': if (G.scout(ui.sel)) toast(`${ic('eye-search', 'au')}Keşif tamam, şansın arttı`); break;
         case 'rest': toast(G.rest() ? `${ic('zzz', 'au')}Sakin bir gece. Takip azaldı` : `${ic('zzz', 'au')}Bir gece dinlendin`); break;
         case 'bribe': if (G.bribe()) toast(`${ic('diamond', 'gem')}Komiser bu sefer görmezden geldi`); break;
-        case 'claim': { const r = G.claimQuest(); if (r) toast(`${ic('gift', 'au')}Görev ödülü: +${fmt(r.money)} ${E.currency}, +${r.gems} ${E.gemName}`); break; }
+        case 'quest': ui.modal = { type: 'quest' }; break;
+        case 'skipquest': if (G.skipQuest()) { ui.modal = null; toast(`${ic('refresh', 'au')}Yeni görev: ${G.quest().text}`); } break;
+        case 'claim': { if (ui.modal && ui.modal.type === 'quest') ui.modal = null; const r = G.claimQuest(); if (r) toast(`${ic('gift', 'au')}Görev ödülü: +${fmt(r.money)} ${E.currency}, +${r.gems} ${E.gemName}`); break; }
         case 'sellgem': if (G.sellGem()) toast(`${ic('diamond', 'gem')}Bir elmas bozuldu`); break;
         case 'buygem': if (G.buyGem()) toast(`${ic('diamond', 'gem')}Bir elmas alındı`); break;
         case 'menu': ui.modal = { type: 'menu' }; break;

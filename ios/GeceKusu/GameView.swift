@@ -53,7 +53,7 @@ struct GameView: UIViewRepresentable {
             // Sayfa çizim sinyali gelmezse amblemi yine de birkaç saniye sonra kaldır.
             DispatchQueue.main.asyncAfter(deadline: .now() + 4) { [loaded] in loaded.wrappedValue = true }
             #if DEBUG
-            let probe = "JSON.stringify({w: innerWidth, h: innerHeight, g: document.querySelector('.game')?.getBoundingClientRect(), cls: document.querySelector('.game')?.className, ui: document.getElementById('ui')?.children.length, game: typeof window.Game})"
+            let probe = "JSON.stringify({w: innerWidth, h: innerHeight, g: document.querySelector('.game')?.getBoundingClientRect(), cls: document.querySelector('.game')?.className, ui: document.getElementById('ui')?.children.length, game: typeof window.Game, seen: window.Game && Game.s.seen, robs: window.Game && Game.s.stats.robs, modal: !!document.querySelector('.modal')})"
             webView.evaluateJavaScript(probe) { r, e in NSLog("[KibarHirsiz] durum: %@", String(describing: r ?? e)) }
             #endif
         }

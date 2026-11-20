@@ -132,6 +132,13 @@
     else if (type === 'loot') S.quest.prog += info.amount;
     else S.quest.prog++;
   }
+  // Takılan görev değiştirilebilir: gecede bir kez, başka yapılabilir görev varsa.
+  const otherQuest = () => E.quests.some((q, j) => j !== S.quest.i % E.quests.length && questAvailable(q));
+  const canSkipQuest = () => !questDone() && S.quest.skipDay !== S.day && otherQuest();
+  function skipQuest() {
+    if (!canSkipQuest()) return false;
+    nextQuest(); S.quest.skipDay = S.day; save(); return true;
+  }
   function claimQuest() {
     if (!questDone()) return null;
     const r = quest().reward;
@@ -511,7 +518,7 @@
     market, marketState, buyMarket, gemRates, sellGem, buyGem, activeBuffs, immediate,
     crewSlots, crewCount, crewCut, crewState, trainCost, hire, train, dismiss,
     xpCap, tierOpen, targetOpen, cooldownLeft, scoutCost, requirements, odds, dateOf,
-    quest, questDone, claimQuest, skillState,
+    quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest,
     pickPattern, rob, startHeist, heistStatus, finishHeist, rushCost, rush, heistTimes, choose, choiceChance, choicePenalty, choiceOpen, reqText, rushTarget,
     scout, rest, bribe, learn, buy, reset, markSeen,
   };
