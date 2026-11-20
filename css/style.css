@@ -363,3 +363,18 @@ button { font-family: inherit; color: inherit; }
 /* Görev kutusuna dokununca ayrıntı penceresi açılır */
 .quest .qopen { display: flex; align-items: center; gap: 10px; min-width: 0; cursor: pointer; }
 .quest .qopen:hover .qt { color: var(--au); }
+
+/* Ödüllü reklam düğmesi */
+.b2.adbtn { border-color: #3ccf8e66; background: #3ccf8e12; }
+.b2.adbtn > .ti { color: var(--ok); }
+.b2.adbtn .adtag { margin-left: 4px; font-size: 10px; letter-spacing: .5px; text-transform: uppercase; color: var(--ok); border: 1px solid #3ccf8e66; border-radius: 6px; padding: 1px 5px; }
+/* Test reklamı penceresi */
+.adtest { position: absolute; inset: 0; z-index: 80; background: #000d; display: flex; align-items: center; justify-content: center; }
+.adtest .adbox { width: min(360px, 80%); background: #fff; color: #222; border-radius: 16px; padding: 22px; text-align: center; }
+.adtest .adtag { display: inline-block; font-size: 11px; letter-spacing: 1px; background: #222; color: #fff; border-radius: 6px; padding: 2px 8px; }
+.adtest .adttl { font-size: 18px; font-weight: 600; margin: 12px 0 2px; }
+.adtest .adsub { font-size: 12px; color: #777; }
+.adtest .adcount { font-size: 40px; font-weight: 700; margin: 10px 0; }
+.adtest .adclose { color: #222; border-color: #ccc; }
+.adtest .adclose:disabled { opacity: .5; cursor: default; }
+.adtest .adskip { color: #777; }

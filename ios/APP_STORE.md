@@ -114,3 +114,20 @@ Sonuç büyük ihtimalle **9+** ya da **12+** olur.
 1. Oyunda değişikliği yap.
 2. Xcode'da **Version** (örn. 1.1) ve **Build** (örn. 2) numaralarını artır.
 3. 9. adımı tekrarla.
+
+## Reklamlar (1.1 sürümü için hazır, şu an kapalı)
+
+Oyunda 5 ödüllü reklam noktası hazır; ilk sürümde hiçbiri görünmez.
+
+| Nerede | Ödül | Sınır |
+|---|---|---|
+| Soygun paneli | İşi bir sonraki olaya ya da sona atlat | İş başına 1 |
+| Başarılı soygun sonucu | Ganimeti ikiye katla | Sonuç başına 1 |
+| Gazete · takip | Takibi 1 düşür | Gecede 1 |
+| Karaborsa · elmas | Bedava 1 elmas | Gecede 1 |
+| Görev penceresi | İkinci kez görev değiştir | Gecede 1 |
+
+- Mod `js/ads.js` içindeki `MODE` ile seçilir: `off` (kapalı), `test` (sahte reklam), `on` (gerçek reklam).
+- Tarayıcıda denemek için adresin sonuna `?ads=test` ekle; kapatmak için `?ads=off`.
+- Gerçek reklam için iOS tarafına Google AdMob eklenip `ads` mesajı dinlenecek; reklam bitince `window.Ads._done(id, true)` çağrılacak.
+- Reklamlar açılınca gizlilik politikası, App Store gizlilik beyanı ve izleme izni (ATT) güncellenmeli.

@@ -9,6 +9,9 @@
   const k = x => (x / 1000).toFixed(1).replace('.0', '').replace('.', ',');
   const range = (a, b) => b >= 1000 ? `${k(a)}–${k(b)} bin` : `${a}–${b}`;
   const ic = (name, color) => `<i class="ti ti-${name}"${color ? ` style="color:var(--${color})"` : ''} aria-hidden="true"></i>`;
+  // Ödüllü reklam düğmesi: reklamlar kapalıysa ya da ödül şu an alınamıyorsa hiç görünmez.
+  const adBtn = (key, label, res) => (window.Ads && Ads.enabled() && G.canAd(key, res))
+    ? `<button class="b2 adbtn" data-ad="${key}">${ic('player-play')}<span>${label}</span><span class="adtag">Reklam</span></button>` : '';
   const diff = p => p >= 70 ? ['Kolay', 'ok', '#3ccf8e22'] : p >= 45 ? ['Orta', 'wa', '#ffb54722'] : ['Zor', 'no', '#ff6b5b22'];
 
   function scene(type, mode) {
@@ -50,7 +53,7 @@
       + (last ? `<div class="lastev">${ic(last.roll ? (last.ok ? 'circle-check' : 'alert-triangle') : 'point', last.roll ? (last.ok ? 'ok' : 'no') : 'mu')}<span><b>${last.title}:</b> ${last.text}</span></div>` : '');
     if (st.pending) return [`<div class="heist">${rows}${info}</div>`, `<button class="b1" data-act="openevent">${ic('alert-triangle')} Karar bekliyor</button>`];
     return [`<div class="heist">${rows}<p class="ptext">${cur.text}</p>${info}</div>`,
-      `<button class="b2 ${G.s.gems < c ? 'off' : ''}" ${G.s.gems >= c ? 'data-act="rush"' : ''} style="margin:0">${ic('bolt', 'gem')}Hızlandır · <span data-hrush>${c}</span> ${E.gemName} <span class="mini" style="margin-left:6px">kalan <span data-htotal>${mmss(st.totalLeft)}</span></span></button>`];
+      adBtn('rush', 'İzle, hemen ilerle') + `<button class="b2 ${G.s.gems < c ? 'off' : ''}" ${G.s.gems >= c ? 'data-act="rush"' : ''} style="margin:0">${ic('bolt', 'gem')}Hızlandır · <span data-hrush>${c}</span> ${E.gemName} <span class="mini" style="margin-left:6px">kalan <span data-htotal>${mmss(st.totalLeft)}</span></span></button>`];
   }
 
   // Üst çubuk ve menü
@@ -218,6 +221,7 @@
         <div class="heat">${[0, 1, 2, 3, 4].map(i => `<i class="${i < S.heat ? 'on' : ''}"></i>`).join('')}</div>
         <div style="font-weight:500;margin:8px 0 4px">${E.labels.heatLevels[S.heat]}</div>
         <p class="mini" style="white-space:normal;line-height:1.5;margin:0 0 12px">${E.labels.heatInfo}</p>
+        ${adBtn('heat', 'Takibi 1 düşür')}
         <button class="b2 ${canBribe ? '' : 'off'}" ${canBribe ? 'data-act="bribe"' : ''}>${ic('diamond', 'gem')}${E.labels.bribe} · ${E.bribeCost}</button>
         <button class="b2 ${S.heist ? 'off' : ''}" ${S.heist ? '' : 'data-act="rest"'}>${ic('zzz')}${E.labels.rest}</button>
         <h4 style="margin-top:18px">KARİYER</h4>
@@ -276,7 +280,8 @@
         ${buffs.length ? buffs.map(it => `<div class="fr">${ic(it.icon, 'au')}<span style="color:var(--tx)">${it.name}</span></div>`).join('') : `<p class="mini" style="white-space:normal;margin:0">Henüz bir şey yok. Aldığın mallar bir sonraki soygunda kullanılır.</p>`}
         <h4 style="margin-top:18px">ELMAS</h4>
         <div class="stat"><span>Elindeki</span><b>${ic('diamond', 'gem')} ${S.gems}</b></div>
-        <button class="b2 ${S.gems < 1 ? 'off' : ''}" ${S.gems >= 1 ? 'data-act="sellgem"' : ''} style="margin-top:8px">1 elmas boz · +${fmt(rates.sell)} ${E.currency}</button>
+        <div style="margin-top:8px">${adBtn('gem', `Bedava 1 ${E.gemName}`)}</div>
+        <button class="b2 ${S.gems < 1 ? 'off' : ''}" ${S.gems >= 1 ? 'data-act="sellgem"' : ''}>1 elmas boz · +${fmt(rates.sell)} ${E.currency}</button>
         <button class="b2 ${S.money < rates.buy ? 'off' : ''}" ${S.money >= rates.buy ? 'data-act="buygem"' : ''}>1 elmas al · ${fmt(rates.buy)} ${E.currency}</button>
         <p class="mini" style="white-space:normal;margin:10px 0 0">${ic('moon')}Mallar her gece yenilenir.</p>
       </aside></div>`;
@@ -364,6 +369,7 @@
         ${r.used && r.used.length ? `<div class="mini" style="justify-content:center;margin:-6px 0 12px;white-space:normal">${ic('building-warehouse')}Kullanıldı: ${r.used.join(', ')}</div>` : ''}
         ${r.log && r.log.length ? `<div class="evlog"><div class="src">GECENİN OLAYLARI</div>${r.log.map(l => `<div class="fr">${ic(l.roll ? (l.ok ? 'circle-check' : 'alert-triangle') : 'point', l.roll ? (l.ok ? 'ok' : 'no') : 'mu')}<span><b>${l.title}:</b> ${l.choice}</span></div>`).join('')}</div>` : ''}
         ${r.news ? `<div class="clip"><div class="src">ERTESİ SABAH · ${E.labels.newspaper.toUpperCase()}</div><div class="h">${r.news.h}</div><div class="b">${r.news.b}</div></div>` : ''}
+        ${adBtn('double', `Ganimeti ikiye katla · +${fmt(r.loot || 0)} ${E.currency}`, r)}
         <div class="btn-row">${r.levelUps ? `<button class="b2" data-go="yetenek">Yeteneklere git</button>` : ''}<button class="b1" data-act="close">Devam</button></div>`;
     }
     if (m.type === 'event') {
@@ -419,7 +425,8 @@
         ${done ? '' : `<p class="mini" style="justify-content:center;white-space:normal;margin:0 0 14px">${skip ? 'Bu görev sana göre değilse başka bir görev isteyebilirsin. Her gece bir kez.' : 'Bu gece görev değiştirme hakkını kullandın. Yarın yeniden isteyebilirsin.'}</p>`}
         <div class="btn-row">${done
           ? `<button class="b2" data-act="close">Kapat</button><button class="b1" data-act="claim">Ödülü al</button>`
-          : `<button class="b2 ${skip ? '' : 'off'}" ${skip ? 'data-act="skipquest"' : ''}>${ic('refresh')}Başka görev</button><button class="b1" data-act="close">Tamam</button>`}</div>`;
+          : `<button class="b2 ${skip ? '' : 'off'}" ${skip ? 'data-act="skipquest"' : ''}>${ic('refresh')}Başka görev</button><button class="b1" data-act="close">Tamam</button>`}</div>
+        ${done ? '' : adBtn('skip', 'Bir kez daha görev değiştir')}`;
     }
     if (m.type === 'menu') {
       inner = `<h2>Ayarlar</h2><p>${E.title} · ${G.dateOf(G.s.day)}</p>
@@ -451,10 +458,32 @@
     $ui.querySelectorAll('.scroll').forEach((el, i) => { if (scrolls[i]) el.scrollTop = scrolls[i]; });
   }
 
+  // Reklamı izlet, bitirince ödülü ver.
+  let adBusy = false;
+  function watchAd(key) {
+    if (adBusy) return;
+    const res = ui.modal && ui.modal.type === 'result' ? ui.modal.r : null;
+    if (!G.canAd(key, res)) return;
+    adBusy = true;
+    Ads.show(key).then(ok => {
+      adBusy = false;
+      if (!ok) { toast(`${ic('player-stop', 'mu')}Reklam yarıda kaldı, ödül verilmedi`); return; }
+      const out = G.adReward(key, res);
+      if (out == null) return;
+      if (key === 'rush') toast(`${ic('bolt', 'gem')}Bir sonraki aşamaya geçildi`);
+      if (key === 'double') toast(`${ic('coins', 'au')}+${fmt(out)} ${E.currency} daha`);
+      if (key === 'heat') toast(`${ic('urgent', 'ok')}Takip 1 azaldı`);
+      if (key === 'gem') toast(`${ic('diamond', 'gem')}+1 ${E.gemName}`);
+      if (key === 'skip') { if (ui.modal && ui.modal.type === 'quest') ui.modal = null; toast(`${ic('refresh', 'au')}Yeni görev: ${out.text}`); }
+      render();
+    });
+  }
+
   $ui.addEventListener('click', e => {
-    const el = e.target.closest('[data-go],[data-tier],[data-sel],[data-act],[data-learn],[data-buy],[data-hire],[data-train],[data-dismiss],[data-mbuy],[data-choice],[data-mastery],[data-city]');
+    const el = e.target.closest('[data-ad],[data-go],[data-tier],[data-sel],[data-act],[data-learn],[data-buy],[data-hire],[data-train],[data-dismiss],[data-mbuy],[data-choice],[data-mastery],[data-city]');
     if (!el) return;
     const d = el.dataset;
+    if (d.ad) { watchAd(d.ad); return; }
     if (d.go) { ui.screen = d.go; ui.modal = null; }
     else if (d.tier) { ui.tier = d.tier; ui.sel = null; }
     else if (d.sel) { ui.sel = d.sel; }

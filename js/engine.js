@@ -139,6 +139,34 @@
     if (!canSkipQuest()) return false;
     nextQuest(); S.quest.skipDay = S.day; save(); return true;
   }
+  // Ödüllü reklamlar: her ödülün sınırı var ki reklam dengeyi bozmasın.
+  //   rush   : sürmekte olan işi bir sonraki olaya / sona atla (iş başına 1)
+  //   double : son başarılı işin ganimetini bir kez daha ver (sonuç başına 1)
+  //   heat   : takibi 1 düşür (gecede 1)
+  //   gem    : 1 elmas (gecede 1)
+  //   skip   : görev değiştirme hakkı bittiyse bir kez daha (gecede 1)
+  const adUsed = k => (S.ads || {})[k] === S.day;
+  const markAd = k => { S.ads = S.ads || {}; S.ads[k] = S.day; };
+  function canAd(k, res) {
+    switch (k) {
+      case 'rush': return !!S.heist && !S.heist.adRushed && !!rushTarget();
+      case 'double': return !!(res && res.ok && !res.doubled && res.loot > 0);
+      case 'heat': return S.heat > 0 && !adUsed('heat');
+      case 'gem': return !adUsed('gem');
+      case 'skip': return !questDone() && otherQuest() && S.quest.skipDay === S.day && !adUsed('skip');
+    }
+    return false;
+  }
+  function adReward(k, res) {
+    if (!canAd(k, res)) return null;
+    let out = null;
+    if (k === 'rush') { const r = rushTarget(); S.heist.start = Date.now() - r.to * 1000 - (r.event ? 0 : 1000); S.heist.adRushed = true; out = true; }
+    if (k === 'double') { S.money += res.loot; S.stats.loot += res.loot; res.doubled = true; out = res.loot; }
+    if (k === 'heat') { S.heat--; markAd('heat'); out = true; }
+    if (k === 'gem') { S.gems++; markAd('gem'); out = 1; }
+    if (k === 'skip') { const day = S.quest.skipDay; nextQuest(); S.quest.skipDay = day; markAd('skip'); out = quest(); }
+    save(); return out;
+  }
   function claimQuest() {
     if (!questDone()) return null;
     const r = quest().reward;
@@ -518,7 +546,7 @@
     market, marketState, buyMarket, gemRates, sellGem, buyGem, activeBuffs, immediate,
     crewSlots, crewCount, crewCut, crewState, trainCost, hire, train, dismiss,
     xpCap, tierOpen, targetOpen, cooldownLeft, scoutCost, requirements, odds, dateOf,
-    quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest,
+    quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest, canAd, adReward,
     pickPattern, rob, startHeist, heistStatus, finishHeist, rushCost, rush, heistTimes, choose, choiceChance, choicePenalty, choiceOpen, reqText, rushTarget,
     scout, rest, bribe, learn, buy, reset, markSeen,
   };
