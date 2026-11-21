@@ -5,3 +5,4 @@ xcuserdata/
 build/
 ios/build/
 ios/build-device/
+ios/build-release/

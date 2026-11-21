@@ -2,6 +2,17 @@
 
 Bu klasörde App Store için gerekenlerin hepsi hazır: Xcode projesi, uygulama simgesi, açılış ekranı, gizlilik bildirimi, ekran görüntüleri ve mağaza metinleri. Aşağıdaki adımları senin yapman gerekiyor, çünkü bunlar senin Apple hesabınla yapılıyor.
 
+## Onay geldiği gün: hızlı yol
+
+"Welcome to the Apple Developer Program" e-postası gelince şu sırayla ilerle. Hepsi birkaç saat sürer; sonrası Apple'ın incelemesi (genelde 1–2 gün).
+
+1. **Adı ayırt (5 dk).** appstoreconnect.apple.com → **Uygulamalar → +  → Yeni Uygulama**. Platform iOS, ad **Kibar Hırsız**, dil Türkçe, SKU `kibarhirsiz`. Paket kimliği listede yoksa önce 2. adımı yap, sonra dön. Ad alınmışsa "Kibar Hırsız: İstanbul 1924" gibi bir ek dene.
+2. **Xcode'a hesabı ekle (5 dk).** Xcode → Settings → Accounts → + → yeni Apple ID. Sonra Claude'a haber ver: takımı değiştirir, gerekirse paket kimliğini yenisine çevirir, uygulamayı imzalayıp App Store Connect'e yükler.
+3. **Mağaza sayfası (30–45 dk).** Aşağıdaki 4–8. bölümleri doldur: metinler, 8 ekran görüntüsü, gizlilik ("Veri toplamıyoruz"), yaş derecelendirmesi. Gizlilik politikası adresi: https://dilatilla00.github.io/kibar-hirsiz/privacy.html, destek adresi: https://dilatilla00.github.io/kibar-hirsiz/support.html
+4. **Derlemeyi seç ve incelemeye gönder (10 dk).** Yükleme 10–30 dakikada "işleniyor"dan çıkar. Sürüm sayfasında **Derleme** bölümünden seç, **İncelemeye Gönder**.
+
+**Hız için öneri:** İlk sürümü (1.0) Game Center'sız gönder. Game Center için 25 başarım görseli ve tanım gerekiyor; bunlar ilk incelemeyi geciktirir. Oyun Game Center olmadan da tam çalışıyor, başarımlar oyunun içinde görünüyor. Game Center'ı 1.1 sürümünde açarız (en alttaki bölüm).
+
 ## 1. Gerekenler
 
 - **Mac'e Xcode kur.** Mac App Store'dan ücretsiz indirilir. Kurduktan sonra bir kez aç ve ek bileşenleri yüklemesine izin ver.
@@ -77,11 +88,11 @@ https://appstoreconnect.apple.com → **Uygulamalar** → **+** → **Yeni Uygul
 
 ## 5. Ekran görüntüleri
 
-`ios/store/screenshots-6.9/` klasöründe 6 adet 2868×1320 yatay görüntü var. Bunları **iPhone 6.9" ekran** bölümüne yükle. Apple bu boyuttan diğer iPhone boyutlarını kendisi türetir.
+`ios/store/screenshots-6.9/` klasöründe 8 adet 2868×1320 yatay görüntü var (sırayla yükle; 7. başarımlar, 8. soygun sırasında bir olay). Bunları **iPhone 6.9" ekran** bölümüne yükle. Apple bu boyuttan diğer iPhone boyutlarını kendisi türetir.
 
 ## 6. Uygulama gizliliği
 
-App Store Connect → **Uygulama Gizliliği** → **Veri toplamıyoruz** ("Data Not Collected") seç. Oyun hiçbir veri toplamıyor ve göndermiyor. Uygulamanın içindeki `PrivacyInfo.xcprivacy` dosyası da bunu bildiriyor.
+App Store Connect → **Uygulama Gizliliği** → **Veri toplamıyoruz** ("Data Not Collected") seç. Oyun hiçbir veri toplamıyor ve göndermiyor. Bildirimler telefonda planlanıyor; Game Center verilerini Apple işlediği için senin beyan etmen gerekmiyor. Uygulamanın içindeki `PrivacyInfo.xcprivacy` dosyası da bunu bildiriyor.
 
 ## 7. Yaş derecelendirmesi
 
