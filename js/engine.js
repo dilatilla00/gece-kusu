@@ -209,7 +209,17 @@
 
   // "Sen yokken": oyuncu uzun süre uzak kalınca neler olduğunu toplar. Uzaktayken zabıta takibi
   // yavaş yavaş söner (her birkaç saatte bir kademe). Son görülme zamanı S.lastSeen'de tutulur.
-  const AW = E.away || { minMinutes: 15, heatEveryHours: 3 };
+  // Ekip kazancı: her üye saatte (en zengin açık hedefin ortalama ganimeti × crewPerHour) kazanır,
+  // eğitimli üye daha çok (seviye başına +%50). En çok crewMaxHours saat sayılır, crewMinMinutes altı sayılmaz.
+  const AW = Object.assign({ minMinutes: 15, heatEveryHours: 3, crewPerHour: 0.025, crewMaxHours: 8, crewMinMinutes: 60 }, E.away || {});
+  function crewEarnings(ms) {
+    const ids = Object.keys(S.crew).filter(id => crewById[id]);
+    if (!ids.length || ms < AW.crewMinMinutes * 60000) return null;
+    const hours = Math.min(ms / 3600000, AW.crewMaxHours);
+    const perHour = ids.reduce((a, id) => a + dailyBase() * AW.crewPerHour * (1 + 0.5 * (S.crew[id] - 1)), 0);
+    const money = nice(perHour * hours);
+    return { money, hours, capped: ms / 3600000 > AW.crewMaxHours, names: ids.map(id => crewById[id].name) };
+  }
   let lastSaveAt = 0;
   function touch(now = Date.now(), force = false) {
     S.lastSeen = now;
@@ -233,6 +243,14 @@
     if (S.heat > 0 && steps > 0) {
       const h0 = S.heat; S.heat = Math.max(0, S.heat - steps);
       out.rows.push({ kind: 'heat', icon: 'shield-check', tone: 'ok', text: S.heat ? `${heatLabel()} gevşedi: <b>${h0}/5 → ${S.heat}/5</b>.` : `${heatLabel()} seni unuttu: <b>${h0}/5 → 0/5</b>. Sokaklar yine senin.`, h0, h1: S.heat });
+    }
+    // Ekip ufak işler çevirdi
+    const ce = crewEarnings(ms);
+    if (ce) {
+      S.money += ce.money;
+      const who = ce.names.length === 1 ? ce.names[0] : ce.names.length === 2 ? ce.names.join(' ve ') : 'Ekibin';
+      out.rows.push({ kind: 'crew', icon: 'users', tone: 'au', money: ce.money,
+        text: `${who} sen yokken ufak işler çevirdi: <b>+${ce.money.toLocaleString('tr-TR')} ${E.currency}</b>.${ce.capped ? ` <span class="awn">(en çok ${AW.crewMaxHours} saatlik)</span>` : ''}` });
     }
     if (!out.rows.length) { save(); return null; }
     const d = dailyState(new Date(now));
@@ -638,7 +656,7 @@
     market, marketState, buyMarket, gemRates, sellGem, buyGem, activeBuffs, immediate,
     crewSlots, crewCount, crewCut, crewState, trainCost, hire, train, dismiss,
     xpCap, tierOpen, targetOpen, cooldownLeft, scoutCost, requirements, odds, dateOf,
-    touch, awayCheck, dailyState, claimDaily, quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest, canAd, adReward, addGems,
+    touch, awayCheck, crewEarnings, dailyState, claimDaily, quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest, canAd, adReward, addGems,
     pickPattern, rob, startHeist, heistStatus, finishHeist, rushCost, rush, heistTimes, baseTimes, choose, choiceChance, choicePenalty, choiceOpen, reqText, rushTarget,
     scout, rest, bribe, learn, buy, reset, markSeen,
   };

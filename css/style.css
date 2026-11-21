@@ -451,3 +451,4 @@ button { font-family: inherit; color: inherit; }
 .awr b { color: var(--tx); }
 .awi { font-size: 22px; flex: none; display: flex; }
 .game.fit .awr { padding: 7px 10px; font-size: 13px; }
+.awr .awn { color: var(--mu); font-size: 12px; }
