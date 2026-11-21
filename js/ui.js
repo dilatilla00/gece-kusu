@@ -89,6 +89,7 @@
         <span class="mini">${fmt(prog)}/${fmt(q.n)}</span></div>
         <button class="gift ${done ? 'ready' : ''}" ${done ? 'data-act="claim"' : ''} aria-label="Görev ödülü">${ic('gift')}</button>
       </div>
+      <button class="icon-btn achbtn" data-act="ach" aria-label="Başarımlar">${ic('trophy')}<span class="achn">${Object.keys(S.ach || {}).length}</span></button>
       <button class="icon-btn" data-act="menu" aria-label="Ayarlar">${ic('settings')}</button>
     </header>`;
   }
@@ -460,6 +461,17 @@
           : `<button class="b2 ${skip ? '' : 'off'}" ${skip ? 'data-act="skipquest"' : ''}>${ic('refresh')}Başka görev</button><button class="b1" data-act="close">Tamam</button>`}</div>
         ${done ? '' : adBtn('skip', 'Bir kez daha görev değiştir')}`;
     }
+    if (m.type === 'ach') {
+      const list = G.achState(), got = list.filter(x => x.done).length;
+      const gc = window.GC && GC.available;
+      inner = `<div class="achhead"><h2>${ic('trophy', 'au')}Başarımlar</h2><span class="achcount">${got} / ${list.length}</span></div>
+        <div class="achlist">${list.map(({ a, done, cur, n }) => `<div class="achi ${done ? 'done' : ''}">
+          <span class="achic">${ic(done ? a.icon : a.icon)}</span>
+          <div class="achtx"><div class="achnm">${a.name}</div><div class="achds">${a.desc}</div>
+            ${done ? '' : n > 1 ? `<div class="bar achbar"><i style="width:${Math.round(cur / n * 100)}%"></i></div><div class="achpr">${fmt(cur)} / ${fmt(n)}</div>` : ''}</div>
+          <span class="achrw">${done ? ic('check', 'ok') : `${ic('diamond', 'gem')}${a.gems}`}</span></div>`).join('')}</div>
+        <div class="btn-row">${gc ? `<button class="b2" data-act="gcshow">${ic('device-gamepad-2')}Game Center</button>` : ''}<button class="b1" data-act="close">Kapat</button></div>`;
+    }
     if (m.type === 'away') {
       const a = m.a, mins = Math.round(a.ms / 60000), dd = Math.floor(mins / 1440), hh = Math.floor(mins % 1440 / 60), mm = mins % 60;
       const dur = dd ? `${dd} gün${hh ? ` ${hh} saat` : ''}` : hh ? `${hh} saat${mm ? ` ${mm} dakika` : ''}` : `${mm} dakika`;
@@ -510,7 +522,7 @@
       inner = `<div class="big" style="background:var(--no);color:#0d1630">${ic('alert-triangle')}</div><h2>Emin misin?</h2><p>Bütün ilerlemen silinecek ve oyun baştan başlayacak.</p>
         <div class="btn-row"><button class="b2" data-act="close">Vazgeç</button><button class="b1" data-act="reset">Sıfırla</button></div>`;
     }
-    return `<div class="veil"><div class="modal ${m.type === 'daily' || m.type === 'away' ? 'wide' : ''}" role="dialog" aria-modal="true">${inner}</div></div>`;
+    return `<div class="veil"><div class="modal ${m.type === 'daily' || m.type === 'away' || m.type === 'ach' ? 'wide' : ''} ${m.type === 'ach' ? 'achm' : ''}" role="dialog" aria-modal="true">${inner}</div></div>`;
   }
 
   function toast(html) {
@@ -622,6 +634,8 @@
         case 'sellgem': if (G.sellGem() && (snd('coin'), true)) toast(`${ic('diamond', 'gem')}Bir elmas bozuldu`); break;
         case 'buygem': if (G.buyGem() && (snd('gem'), true)) toast(`${ic('diamond', 'gem')}Bir elmas alındı`); break;
         case 'menu': ui.modal = { type: 'menu' }; break;
+        case 'ach': ui.modal = { type: 'ach' }; break;
+        case 'gcshow': if (window.GC) GC.show(); break;
         case 'togglesfx': if (window.Sound) { Sound.sfx = !Sound.sfx; snd('tap'); } break;
         case 'togglemusic': if (window.Sound) Sound.music = !Sound.music; break;
         case 'togglehaptic': if (window.Haptic) Haptic.on = !Haptic.on; break;
@@ -640,6 +654,17 @@
   let lastPhase = null, lastAfford = null;
   setInterval(() => {
     G.touch();
+    if (!document.getElementById('splash')) {
+      const got = G.checkAch();
+      if (got.length) {
+        snd('levelup');
+        toast(got.length === 1 ? `${ic('trophy', 'au')}Başarım: <b>${got[0].name}</b> · +${got[0].gems} ${E.gemName}`
+          : `${ic('trophy', 'au')}${got.length} başarım açıldı · +${got.reduce((x, a) => x + (a.gems || 0), 0)} ${E.gemName}`);
+        if (window.GC) got.forEach(a => GC.unlock(a.id));
+        if (!ui.modal || ui.modal.type === 'ach') render(); else $ui.querySelectorAll('.achn').forEach(e => { e.textContent = Object.keys(G.s.ach).length; });
+      }
+      if (window.GC) GC.scores();
+    }
     // "Sen yokken" özeti her şeyden önce gösterilir; o kapanana kadar soygun sonucu ve olay bekler.
     if (G.away) {
       if (!ui.modal && !document.getElementById('splash') && !(window.Tour && Tour.active)) { ui.modal = { type: 'away', a: G.away }; G.away = null; snd('phase'); render(); }

@@ -1,6 +1,7 @@
 import SwiftUI
 import WebKit
 import UserNotifications
+import GameKit
 
 /// Oyunu uygulamanın içindeki "Web" klasöründen, internet gerekmeden açar.
 struct GameView: UIViewRepresentable {
@@ -17,6 +18,7 @@ struct GameView: UIViewRepresentable {
         config.userContentController.add(context.coordinator, name: "ready")
         config.userContentController.add(context.coordinator, name: "notify")
         config.userContentController.add(context.coordinator, name: "haptic")
+        config.userContentController.add(context.coordinator, name: "gc")
         config.userContentController.addUserScript(WKUserScript(source: """
             window.addEventListener('error', e => webkit.messageHandlers.log.postMessage('JS hata: ' + e.message + ' @ ' + e.filename + ':' + e.lineno));
             window.addEventListener('unhandledrejection', e => webkit.messageHandlers.log.postMessage('JS hata: ' + e.reason));
@@ -54,6 +56,14 @@ struct GameView: UIViewRepresentable {
             switch message.name {
             case "ready": loaded.wrappedValue = true; return // açılış ekranı çizildi
             case "haptic": Haptics.play(message.body as? String ?? "light"); return
+            case "gc":
+                if let m = message.body as? [String: Any] {
+                    GameCenter.shared.handle(m) { [weak self] ok, alias in
+                        let name = alias.replacingOccurrences(of: "'", with: "\\'")
+                        self?.web?.evaluateJavaScript("window.GC && GC._status(\(ok), '\(name)')")
+                    }
+                }
+                return
             case "notify":
                 if let m = message.body as? [String: Any] {
                     Notifier.shared.handle(m) { [weak self] status in
@@ -197,5 +207,51 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
                                 withCompletionHandler done: @escaping (UNNotificationPresentationOptions) -> Void) {
         done([])
+    }
+}
+
+/// Game Center: giriş, başarımlar ve sıralamalar. Giriş yapılamazsa (ör. Game Center kapalı ya da
+/// uygulama App Store Connect'te tanımlı değil) oyun sessizce Game Center'sız devam eder.
+final class GameCenter {
+    static let shared = GameCenter()
+    private var started = false
+
+    func handle(_ m: [String: Any], status: @escaping (Bool, String) -> Void) {
+        switch m["op"] as? String ?? "" {
+        case "auth": authenticate(status)
+        case "ach":
+            guard GKLocalPlayer.local.isAuthenticated, let id = m["id"] as? String else { return }
+            let a = GKAchievement(identifier: id)
+            a.percentComplete = 100
+            a.showsCompletionBanner = false // oyun kendi bildirimini gösteriyor
+            GKAchievement.report([a]) { e in if let e { NSLog("[KibarHirsiz] başarım gönderilemedi %@: %@", id, e.localizedDescription) } }
+        case "score":
+            guard GKLocalPlayer.local.isAuthenticated, let id = m["id"] as? String, let v = m["value"] as? Int else { return }
+            GKLeaderboard.submitScore(v, context: 0, player: GKLocalPlayer.local, leaderboardIDs: [id]) { e in
+                if let e { NSLog("[KibarHirsiz] skor gönderilemedi %@: %@", id, e.localizedDescription) }
+            }
+        case "show":
+            guard GKLocalPlayer.local.isAuthenticated else { return }
+            GKAccessPoint.shared.trigger(state: .achievements) {}
+        default: break
+        }
+    }
+
+    private func authenticate(_ status: @escaping (Bool, String) -> Void) {
+        if started { status(GKLocalPlayer.local.isAuthenticated, GKLocalPlayer.local.alias); return }
+        started = true
+        GKLocalPlayer.local.authenticateHandler = { vc, error in
+            if let vc {
+                // Game Center giriş ekranını göster
+                let root = UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first?.rootViewController
+                var top = root
+                while let p = top?.presentedViewController { top = p }
+                top?.present(vc, animated: true)
+                return
+            }
+            if let error { NSLog("[KibarHirsiz] Game Center: %@", error.localizedDescription) }
+            let me = GKLocalPlayer.local
+            DispatchQueue.main.async { status(me.isAuthenticated, me.isAuthenticated ? me.alias : "") }
+        }
     }
 }

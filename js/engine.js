@@ -19,7 +19,7 @@
     return {
       v: 1, day: 0, lv: 1, xp: 0, money: E.start.money, gems: E.start.gems, fame: 0, heat: 0, sp: 1,
       skills: [], tools: [], crew: {}, mastery: {}, sec: {}, legends: {},
-      city: homeCity, cities: [homeCity], heatBy: {}, collection: {}, setsDone: {}, legendOffer: null, buffs: [], market: null, heist: null, scouted: {}, cooldown: {}, streak: 0,
+      city: homeCity, cities: [homeCity], heatBy: {}, collection: {}, setsDone: {}, ach: {}, legendOffer: null, buffs: [], market: null, heist: null, scouted: {}, cooldown: {}, streak: 0,
       stats: { robs: 0, ok: 0, fail: 0, caught: 0, loot: 0, scouts: 0 },
       quest: { i: 0, prog: 0 },
       news: [{ day: 0, kind: 'intro', h: E.news.intro.h, b: E.news.intro.b }],
@@ -202,7 +202,7 @@
     const st = dailyState(now);
     if (!st.ready) return null;
     S.money += st.reward.money; S.gems += st.reward.gems;
-    S.daily = { last: dayKey(now), n: st.streak + 1 };
+    S.daily = { last: dayKey(now), n: st.streak + 1 }; S.stats.dailyBest = Math.max(S.stats.dailyBest || 0, st.streak + 1);
     save();
     return { ...st.reward, day: st.idx + 1, streak: st.streak + 1 };
   }
@@ -257,6 +257,30 @@
     if (d.ready) out.rows.push({ kind: 'daily', icon: 'calendar-star', tone: 'au', text: `Günlük ödülün hazır: <b>${d.idx + 1}. gün</b>.` });
     save();
     return out;
+  }
+
+  // Başarımlar: sayaçlara bakar; yeni açılanlara elmas verir ve listesini döndürür.
+  const ACH = E.achievements || [], achById = by(ACH);
+  const achTarget = a => a.n === 'all' ? CITIES.length : a.n;
+  function achValue(a) {
+    const st = S.stats;
+    if (a.kind.startsWith('tier:')) { const tr = a.kind.slice(5); return Object.keys(S.sec).filter(id => targetById[id] && targetById[id].tier === tr).length; }
+    switch (a.kind) {
+      case 'ok': return st.ok; case 'robs': return st.robs; case 'loot': return st.loot; case 'caught': return st.caught; case 'scouts': return st.scouts;
+      case 'bestStreak': return Math.max(st.bestStreak || 0, S.streak); case 'events': return st.events || 0; case 'dailyBest': return st.dailyBest || 0;
+      case 'lv': return S.lv; case 'cities': return S.cities.length; case 'crew': return crewCount(); case 'skills': return S.skills.length;
+      case 'crewMax': return Object.keys(S.crew).filter(id => S.crew[id] >= 3).length;
+      case 'sets': return Object.keys(S.setsDone).length; case 'legends': return Object.keys(S.legends).length;
+      default: return 0;
+    }
+  }
+  const achState = () => ACH.map(a => ({ a, done: !!(S.ach || {})[a.id], cur: Math.min(achValue(a), achTarget(a)), n: achTarget(a) }));
+  function checkAch() {
+    S.ach = S.ach || {};
+    const fresh = ACH.filter(a => !S.ach[a.id] && achValue(a) >= achTarget(a));
+    if (!fresh.length) return [];
+    fresh.forEach(a => { S.ach[a.id] = Date.now(); S.gems += a.gems || 0; });
+    save(); return fresh;
   }
 
   function levelUps() {
@@ -372,6 +396,7 @@
     const ok = c.chance == null || Math.random() * 100 < choiceChance(c);
     const fx = (ok ? c.ok : c.fail) || {};
     pe.done = true;
+    S.stats.events = (S.stats.events || 0) + 1;
     h.start = Date.now() - pe.at * 1000; // sayaç olayın olduğu yerden devam eder
     if (c.req && c.req.tool) { h.tools = h.tools || []; if (!h.tools.includes(c.req.tool)) h.tools.push(c.req.tool); }
     const out = { event: ev, choice: c, ok, fx };
@@ -451,7 +476,7 @@
       res.cut = cut;
       S.money += loot; S.stats.ok++; S.stats.loot += loot;
       res.xp = Math.round(xpFor(t) * xpMult);
-      S.xp += res.xp; S.fame += t.fame; S.streak++;
+      S.xp += res.xp; S.fame += t.fame; S.streak++; S.stats.bestStreak = Math.max(S.stats.bestStreak || 0, S.streak);
       S.cooldown[t.id] = S.day + (t.cd || 2);
       delete S.scouted[t.id];
       Object.assign(res, { loot, fame: t.fame });
@@ -656,7 +681,7 @@
     market, marketState, buyMarket, gemRates, sellGem, buyGem, activeBuffs, immediate,
     crewSlots, crewCount, crewCut, crewState, trainCost, hire, train, dismiss,
     xpCap, tierOpen, targetOpen, cooldownLeft, scoutCost, requirements, odds, dateOf,
-    touch, awayCheck, crewEarnings, dailyState, claimDaily, quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest, canAd, adReward, addGems,
+    achById, achState, checkAch, touch, awayCheck, crewEarnings, dailyState, claimDaily, quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest, canAd, adReward, addGems,
     pickPattern, rob, startHeist, heistStatus, finishHeist, rushCost, rush, heistTimes, baseTimes, choose, choiceChance, choicePenalty, choiceOpen, reqText, rushTarget,
     scout, rest, bribe, learn, buy, reset, markSeen,
   };

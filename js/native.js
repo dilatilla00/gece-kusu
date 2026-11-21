@@ -97,5 +97,35 @@
     sync, plan, dailyPlan,
   };
   window.Notify = Notify;
+
+  // ---------- Game Center ----------
+  // iOS uygulamasında oyuncu Game Center'a giriş yaptıysa başarımlar ve sıralamalar oraya da gönderilir.
+  // Kimlikler: başarım "kh_<id>", sıralamalar "kh_loot" (toplam ganimet) ve "kh_level" (seviye).
+  // Bunlar App Store Connect'te aynı kimliklerle tanımlanmalı (ios/APP_STORE.md).
+  const gb = bridge('gc');
+  let gOk = false, alias = '', sent = {};
+  const GC = {
+    get available() { return gOk; },
+    get alias() { return alias; },
+    _status(ok, name) {
+      gOk = !!ok; alias = name || '';
+      if (!gOk) return;
+      sent = {};
+      Object.keys(G.s.ach || {}).forEach(id => GC.unlock(id)); // daha önce açılanları da eşitle
+      GC.scores();
+      if (window.UI && UI.refresh) UI.refresh();
+    },
+    unlock(id) { if (gOk && gb) gb.postMessage({ op: 'ach', id: 'kh_' + id }); },
+    // Değer değiştikçe sıralamaya gönder
+    scores() {
+      if (!gOk || !gb) return;
+      const v = { kh_loot: Math.floor(G.s.stats.loot), kh_level: G.s.lv };
+      Object.keys(v).forEach(k => { if (sent[k] !== v[k]) { sent[k] = v[k]; gb.postMessage({ op: 'score', id: k, value: v[k] }); } });
+    },
+    show() { if (gb) gb.postMessage({ op: 'show' }); },
+  };
+  window.GC = GC;
+  // Giriş, oyuncu "Oyuna başla"ya dokunduktan sonra istenir (açılış ekranını kapatmasın diye)
+  if (gb) document.addEventListener('gk:start', () => gb.postMessage({ op: 'auth' }));
   if (nb) { nb.postMessage({ op: 'status' }); setInterval(sync, 1000); }
 })();

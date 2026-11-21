@@ -266,6 +266,35 @@ window.ERA = {
 
   // Şehirler: ilki başlangıç şehri. Diğerleri seviye gelince bilet ve vize (cost) ödenerek açılır, sonra aralarında serbestçe gidilir.
   // Her şehrin kendi takibi var: bir şehirde ortalık kızışınca başka bir şehre kaçabilirsin.
+  // Başarımlar. kind: hangi sayaca bakılır (engine.js achValue), n: hedef, gems: açılınca verilen elmas.
+  // Game Center'da her birinin kimliği "kh_" + id olur (App Store Connect'te aynı kimlikle tanımlanmalı).
+  achievements: [
+    { id: 'ilk_is', name: 'İlk iş', desc: 'İlk soygununu başarıyla bitir', icon: 'flag', kind: 'ok', n: 1, gems: 1 },
+    { id: 'is_25', name: 'Mahallenin gölgesi', desc: '25 başarılı iş yap', icon: 'moon', kind: 'ok', n: 25, gems: 2 },
+    { id: 'is_100', name: 'Şehrin kâbusu', desc: '100 başarılı iş yap', icon: 'ghost', kind: 'ok', n: 100, gems: 3 },
+    { id: 'is_500', name: 'Yaşayan efsane', desc: '500 başarılı iş yap', icon: 'crown', kind: 'ok', n: 500, gems: 5 },
+    { id: 'seri_5', name: 'Pürüzsüz', desc: 'Üst üste 5 işi başarıyla bitir', icon: 'sparkles', kind: 'bestStreak', n: 5, gems: 1 },
+    { id: 'seri_15', name: 'Hayalet', desc: 'Üst üste 15 işi başarıyla bitir', icon: 'ghost-2', kind: 'bestStreak', n: 15, gems: 3 },
+    { id: 'ganimet_1k', name: 'İlk birikim', desc: 'Toplam 1.000 lira ganimet topla', icon: 'coins', kind: 'loot', n: 1000, gems: 1 },
+    { id: 'ganimet_100k', name: 'Köşeyi döndün', desc: 'Toplam 100.000 lira ganimet topla', icon: 'pig-money', kind: 'loot', n: 100000, gems: 2 },
+    { id: 'ganimet_10m', name: 'Servet', desc: 'Toplam 10 milyon lira ganimet topla', icon: 'building-bank', kind: 'loot', n: 10000000, gems: 5 },
+    { id: 'sv_5', name: 'Çırak', desc: '5. seviyeye ulaş', icon: 'star', kind: 'lv', n: 5, gems: 1 },
+    { id: 'sv_15', name: 'Kalfa', desc: '15. seviyeye ulaş', icon: 'medal', kind: 'lv', n: 15, gems: 2 },
+    { id: 'sv_30', name: 'Usta', desc: '30. seviyeye ulaş', icon: 'medal-2', kind: 'lv', n: 30, gems: 3 },
+    { id: 'sehir_2', name: 'Pasaport', desc: "İstanbul'dan başka bir şehrin yolunu aç", icon: 'plane', kind: 'cities', n: 2, gems: 2 },
+    { id: 'sehir_hepsi', name: 'Dünya turu', desc: 'Bütün şehirlerin yolunu aç', icon: 'world', kind: 'cities', n: 'all', gems: 5 },
+    { id: 'ekip_1', name: 'Yalnız kurt değilsin', desc: 'Ekibine ilk üyeyi al', icon: 'users', kind: 'crew', n: 1, gems: 1 },
+    { id: 'ekip_3', name: 'Tam kadro', desc: 'Ekibini 3 kişiye çıkar', icon: 'users-group', kind: 'crew', n: 3, gems: 2 },
+    { id: 'ekip_usta', name: 'Usta çırak', desc: 'Bir ekip üyesini en üst seviyeye kadar eğit', icon: 'school', kind: 'crewMax', n: 1, gems: 2 },
+    { id: 'kesif_20', name: 'Meraklı göz', desc: '20 keşif yap', icon: 'eye', kind: 'scouts', n: 20, gems: 1 },
+    { id: 'yetenek_10', name: 'Çok yönlü', desc: '10 yetenek öğren', icon: 'book', kind: 'skills', n: 10, gems: 2 },
+    { id: 'olay_25', name: 'Soğukkanlı', desc: 'Soygun sırasında 25 beklenmedik olayla başa çık', icon: 'brain', kind: 'events', n: 25, gems: 2 },
+    { id: 'muze_1', name: 'Müze faresi', desc: 'Bir müzeyi ya da antikacıyı soy', icon: 'building-castle', kind: 'tier:muze', n: 1, gems: 2 },
+    { id: 'set_1', name: 'Koleksiyoncu', desc: 'Bir koleksiyon setini tamamla', icon: 'cards', kind: 'sets', n: 1, gems: 2 },
+    { id: 'efsane_1', name: 'Efsanevi iş', desc: 'İlk efsanevi işini başar', icon: 'masks-theater', kind: 'legends', n: 1, gems: 3 },
+    { id: 'gunluk_7', name: 'Sadık müdavim', desc: 'Günlük ödülü 7 gün üst üste al', icon: 'calendar-check', kind: 'dailyBest', n: 7, gems: 2 },
+    { id: 'yakalandi', name: 'Kodese merhaba', desc: 'İlk kez yakalan. Olur böyle şeyler', icon: 'lock', kind: 'caught', n: 1, gems: 1 },
+  ],
   cities: [
     { id: 'istanbul', name: 'İstanbul', lv: 1 },
     { id: 'atina', name: 'Atina', lv: 19, cost: 100000, heat: 'Polis takibi', info: 'Antik hazineler, gemi zenginleri ve sisli bir liman.' },
