@@ -209,6 +209,66 @@ window.Sound = (function () {
       noise(t + 1.0, 0.25, { f: 900, q: 2, vol: 0.12, sweep: 1.8 });
       tone(320, t + 1.0, 0.25, { type: 'triangle', vol: 0.05, slide: 1.3 });
     },
+    // ---- Yeni olay sesleri ----
+    // Sağanak yağmur ve uzak gök gürültüsü
+    rain(t) {
+      noise(t, 2.2, { type: 'highpass', f: 2500, vol: 0.12, a: 0.4 });
+      for (let i = 0; i < 18; i++) noise(t + rnd(0, 2), 0.01, { f: rnd(3000, 7000), q: 4, vol: 0.05 });
+      noise(t + 0.6, 1.4, { type: 'lowpass', f: 120, q: 1, vol: 0.35, a: 0.3 });
+    },
+    // Tramvay: iki zil ve ray gürültüsü
+    tram(t) {
+      [0, 0.28].forEach(d => { tone(1320, t + d, 0.5, { type: 'sine', vol: 0.1 }); tone(1320 * 2.76, t + d, 0.25, { type: 'sine', vol: 0.03 }); });
+      noise(t + 0.4, 1.6, { type: 'lowpass', f: 180, q: 2, vol: 0.25, a: 0.4 });
+      for (let i = 0; i < 6; i++) noise(t + 0.6 + i * 0.22, 0.04, { type: 'lowpass', f: 400, q: 3, vol: 0.2 });
+    },
+    // Kepenk aralanması
+    shutter(t) { noise(t, 0.35, { f: 900, q: 3, vol: 0.18, sweep: 1.6 }); noise(t + 0.35, 0.05, { type: 'lowpass', f: 300, vol: 0.3 }); },
+    // Gaz lambası: tıslama ve tık
+    gaslamp(t) { noise(t, 0.02, { f: 3500, q: 6, vol: 0.25 }); noise(t + 0.05, 1.0, { type: 'highpass', f: 4000, vol: 0.06, a: 0.1 }); },
+    // Kalın cama tıklatma
+    glass(t) { [0, 0.18, 0.32].forEach(d => { tone(2900, t + d, 0.12, { type: 'sine', vol: 0.08 }); tone(5200, t + d, 0.06, { type: 'sine', vol: 0.03 }); noise(t + d, 0.01, { f: 6000, q: 5, vol: 0.08 }); }); },
+    // Uyurgezer: yavaş adımlar ve mırıltı
+    sleepwalk(t) {
+      for (let i = 0; i < 3; i++) noise(t + i * 0.7, 0.1, { type: 'lowpass', f: 170, q: 1, vol: 0.35 });
+      const o = ctx.createOscillator(), fl = ctx.createBiquadFilter(), g = ctx.createGain();
+      o.type = 'sawtooth'; o.frequency.setValueAtTime(130, t + 0.4); o.frequency.linearRampToValueAtTime(110, t + 1.4);
+      fl.type = 'bandpass'; fl.frequency.value = 500; fl.Q.value = 4;
+      g.gain.setValueAtTime(0.0001, t + 0.4); g.gain.exponentialRampToValueAtTime(0.07, t + 0.6); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+      o.connect(fl).connect(g).connect(sfxBus); o.start(t + 0.4); o.stop(t + 1.6);
+    },
+    // Duvar saati: tok vuruşlar
+    chime(t) { for (let i = 0; i < 4; i++) { const bt = t + i * 0.55; tone(392, bt, 1.2, { type: 'sine', vol: 0.12 }); tone(392 * 2.4, bt, 0.6, { type: 'sine', vol: 0.04 }); tone(98, bt, 0.4, { vol: 0.08 }); } },
+    // Mücevher kutusu: küçük şıngırtı
+    jewel(t) { for (let i = 0; i < 6; i++) tone(rnd(3000, 5200), t + i * rnd(0.03, 0.07), 0.15, { type: 'sine', vol: 0.05 }); noise(t, 0.04, { type: 'lowpass', f: 600, vol: 0.2 }); },
+    // Müze bekçisi: anahtar destesi ve ağır adımlar
+    keysguard(t) { FX.keys(t); for (let i = 0; i < 3; i++) noise(t + 0.5 + i * 0.5, 0.09, { type: 'lowpass', f: 160, q: 1, vol: 0.4 }); },
+    // Eski duvar telefonu zili
+    phone(t) {
+      [0, 0.7].forEach(d => {
+        const o = ctx.createOscillator(), g = ctx.createGain(), am = ctx.createOscillator(), ag = ctx.createGain();
+        o.type = 'triangle'; o.frequency.value = 1100; am.type = 'square'; am.frequency.value = 22; ag.gain.value = 0.06;
+        g.gain.setValueAtTime(0.0001, t + d); g.gain.linearRampToValueAtTime(0.06, t + d + 0.02); g.gain.setValueAtTime(0.06, t + d + 0.45); g.gain.linearRampToValueAtTime(0.0001, t + d + 0.5);
+        am.connect(ag).connect(g.gain); o.connect(g).connect(sfxBus);
+        o.start(t + d); am.start(t + d); o.stop(t + d + 0.55); am.stop(t + d + 0.55);
+      });
+    },
+    // Atlı devriye: nal sesleri
+    hooves(t) { for (let i = 0; i < 8; i++) { const bt = t + i * 0.2 + (i % 2 ? 0.07 : 0); noise(bt, 0.03, { f: 1400, q: 3, vol: 0.3 }); tone(220, bt, 0.04, { type: 'square', vol: 0.03 }); } },
+    // Vapur düdüğü
+    ferry(t) {
+      [110, 138.6, 165].forEach(f => {
+        const o = ctx.createOscillator(), fl = ctx.createBiquadFilter(), g = ctx.createGain();
+        o.type = 'sawtooth'; o.frequency.value = f; fl.type = 'lowpass'; fl.frequency.value = 700;
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.06, t + 0.25); g.gain.setValueAtTime(0.06, t + 1.4); g.gain.exponentialRampToValueAtTime(0.0001, t + 2.0);
+        o.connect(fl).connect(g).connect(sfxBus); o.start(t); o.stop(t + 2.1);
+      });
+    },
+    // Sütçü arabası: tekerlek ve şişe tıngırtısı
+    cart(t) {
+      for (let i = 0; i < 8; i++) noise(t + i * 0.16, 0.05, { type: 'lowpass', f: 300, q: 2, vol: 0.18 });
+      for (let i = 0; i < 6; i++) tone(rnd(1800, 2600), t + rnd(0, 1.2), 0.12, { type: 'triangle', vol: 0.05 });
+    },
     // Alet kırılması: çatırtı
     break(t) { noise(t, 0.08, { type: 'highpass', f: 1500, vol: 0.4 }); noise(t + 0.03, 0.2, { type: 'lowpass', f: 900, vol: 0.3 }); tone(180, t, 0.15, { type: 'square', vol: 0.06, slide: 0.5 }); },
   };
