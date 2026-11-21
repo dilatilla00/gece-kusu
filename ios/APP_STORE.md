@@ -11,7 +11,7 @@ Bu klasörde App Store için gerekenlerin hepsi hazır: Xcode projesi, uygulama 
 3. **Mağaza sayfası (30–45 dk).** Aşağıdaki 4–8. bölümleri doldur: metinler, 8 ekran görüntüsü, gizlilik ("Veri toplamıyoruz"), yaş derecelendirmesi. Gizlilik politikası adresi: https://dilatilla00.github.io/kibar-hirsiz/privacy.html, destek adresi: https://dilatilla00.github.io/kibar-hirsiz/support.html
 4. **Derlemeyi seç ve incelemeye gönder (10 dk).** Yükleme 10–30 dakikada "işleniyor"dan çıkar. Sürüm sayfasında **Derleme** bölümünden seç, **İncelemeye Gönder**.
 
-**Hız için öneri:** İlk sürümü (1.0) Game Center'sız gönder. Game Center için 25 başarım görseli ve tanım gerekiyor; bunlar ilk incelemeyi geciktirir. Oyun Game Center olmadan da tam çalışıyor, başarımlar oyunun içinde görünüyor. Game Center'ı 1.1 sürümünde açarız (en alttaki bölüm).
+**Hız için öneri:** İlk sürümü (1.0) Game Center'sız gönder. Game Center için 27 başarım görseli ve tanım gerekiyor; bunlar ilk incelemeyi geciktirir. Oyun Game Center olmadan da tam çalışıyor, başarımlar oyunun içinde görünüyor. Game Center'ı 1.1 sürümünde açarız (en alttaki bölüm).
 
 ## 1. Gerekenler
 
@@ -161,7 +161,7 @@ Oyunda 5 ödüllü reklam noktası hazır; ilk sürümde hiçbiri görünmez.
 
 ## Game Center (kodu hazır, ücretli hesap gerekir)
 
-Oyunda 25 başarım var. Oyuncu Game Center'a girmişse başarımlar ve iki sıralama oraya da gönderilir. Game Center'a girmemiş oyuncular için oyun her şeyi kendi içinde göstermeye devam eder.
+Oyunda 27 başarım var. Oyuncu Game Center'a girmişse başarımlar ve iki sıralama oraya da gönderilir. Game Center'a girmemiş oyuncular için oyun her şeyi kendi içinde göstermeye devam eder.
 
 Ücretsiz Apple hesabıyla Game Center kullanılamıyor. Bu yüzden yetenek (capability) şimdilik projeye eklenmedi; eklenirse ücretsiz hesapla telefona kurulum bozulur. Geliştirici hesabın onaylanınca:
 
@@ -174,7 +174,7 @@ Oyunda 25 başarım var. Oyuncu Game Center'a girmişse başarımlar ve iki sır
 | `kh_loot` | Toplam ganimet | Tam sayı, büyük olan önde |
 | `kh_level` | Seviye | Tam sayı, büyük olan önde |
 
-4. **Başarımlar (Achievements)** bölümünde aşağıdakileri **aynı kimliklerle** ekle. Toplam 845 puan (Apple'ın sınırı 1000). Her biri için 512×512 bir görsel gerekir.
+4. **Başarımlar (Achievements)** bölümünde aşağıdakileri **aynı kimliklerle** ekle. Toplam 895 puan (Apple'ın sınırı 1000). Her biri için 512×512 bir görsel gerekir.
 
 | Kimlik | Ad | Açıklama | Puan |
 |---|---|---|---|
@@ -202,6 +202,8 @@ Oyunda 25 başarım var. Oyuncu Game Center'a girmişse başarımlar ve iki sır
 | `kh_set_1` | Koleksiyoncu | Bir koleksiyon setini tamamla | 25 |
 | `kh_efsane_1` | Efsanevi iş | İlk efsanevi işini başar | 50 |
 | `kh_gunluk_7` | Sadık müdavim | Günlük ödülü 7 gün üst üste al | 25 |
+| `kh_mini_10` | Altın parmaklar | Kilit ve kasa açmayı 10 kez kendin başar | 25 |
+| `kh_yatakci_10` | Tüccar ruhlu | Yatakçılara 10 eşya sat | 25 |
 | `kh_yakalandi` | Kodese merhaba | İlk kez yakalan. Olur böyle şeyler | 10 |
 
 5. Uygulama sürümünün sayfasında **Game Center** kutusunu işaretle ve sıralama ile başarımları sürüme ekle.

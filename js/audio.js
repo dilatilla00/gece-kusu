@@ -269,6 +269,8 @@ window.Sound = (function () {
       for (let i = 0; i < 8; i++) noise(t + i * 0.16, 0.05, { type: 'lowpass', f: 300, q: 2, vol: 0.18 });
       for (let i = 0; i < 6; i++) tone(rnd(1800, 2600), t + rnd(0, 1.2), 0.12, { type: 'triangle', vol: 0.05 });
     },
+    // Kasa çarkı tıkırtısı
+    tick(t) { noise(t, 0.025, { type: 'highpass', f: 3000, vol: 0.5 }); tone(2400, t, 0.03, { type: 'square', vol: 0.05 }); },
     // Alet kırılması: çatırtı
     break(t) { noise(t, 0.08, { type: 'highpass', f: 1500, vol: 0.4 }); noise(t + 0.03, 0.2, { type: 'lowpass', f: 900, vol: 0.3 }); tone(180, t, 0.15, { type: 'square', vol: 0.06, slide: 0.5 }); },
   };

@@ -19,6 +19,88 @@
     if ((r.broken || []).length) snd('break', 0.7);
     if (r.levelUps) snd('levelup', r.legend ? 1.8 : 1.0);
   }
+  // Gecenin etkilerini okunur satırlara çevir
+  function nightLines(n) {
+    const f = n.fx || {}, out = [];
+    const where = f.tiers ? ' (' + f.tiers.map(id => (E.tiers.find(x => x.id === id) || {}).name || id).join(', ').toLocaleLowerCase('tr-TR') + ')' : '';
+    if (f.p) out.push({ icon: 'target', tone: f.p > 0 ? 'ok' : 'no', text: `Başarı şansı <b>${f.p > 0 ? '+' : ''}${f.p}</b>${where}` });
+    if (f.heat) out.push({ icon: 'urgent', tone: f.heat < 1 ? 'ok' : 'no', text: `Fark edilme riski <b>%${Math.round(Math.abs(1 - f.heat) * 100)} ${f.heat < 1 ? 'az' : 'fazla'}</b>` });
+    if (f.time) out.push({ icon: 'hourglass', tone: f.time < 1 ? 'ok' : 'wa', text: `Soygunlar <b>%${Math.round(Math.abs(1 - f.time) * 100)} ${f.time < 1 ? 'kısa' : 'uzun'}</b> sürer` });
+    if (f.loot) out.push({ icon: 'coins', tone: 'au', text: `Ganimet <b>%${Math.round(f.loot * 100)} fazla</b>` });
+    if (f.xp) out.push({ icon: 'bolt', tone: 'xp', text: `Tecrübe <b>%${Math.round(f.xp * 100)} fazla</b>` });
+    return out;
+  }
+
+  // ---- Mini oyunlar: kilit (gösterge yeşil alanda durdurulur) ve kasa (çark tıkladığında durdurulur) ----
+  let mg = null, mgRaf = 0;
+  function mgStart() {
+    const st = G.heistStatus(); if (!st || !st.pending || !st.pending.mini) return;
+    const kind = st.pending.mini.kind, cfg = G.miniSetup(kind);
+    mg = { kind, cfg, step: 0, misses: 0, pos: 0, dir: 1, t0: performance.now(), last: performance.now(), done: false, won: false, inWin: false, flash: '' };
+    mgNew();
+    cancelAnimationFrame(mgRaf); mgRaf = requestAnimationFrame(mgLoop);
+  }
+  function mgNew() {
+    if (mg.kind === 'lock') { mg.zs = 0.08 + Math.random() * (0.84 - mg.cfg.zone); }
+    else { // kasa: her rakamda yön değişir; yeni rakam en az çeyrek tur uzakta başlar
+      mg.target = (mg.pos + mg.dir * -1 * (90 + Math.random() * 180) + 720) % 360; mg.dir = mg.step % 2 ? -1 : 1; mg.win = 8 + mg.cfg.zone * 60; mg.inWin = false;
+    }
+  }
+  const angDist = (a, b) => { const d = Math.abs(((a - b) % 360 + 540) % 360 - 180); return d; };
+  function mgLoop(now) {
+    if (!mg || mg.done || !ui.modal || ui.modal.type !== 'mini') return;
+    const dt = Math.min(0.05, (now - mg.last) / 1000); mg.last = now;
+    if (mg.kind === 'lock') {
+      mg.pos += mg.dir * dt * mg.cfg.speed * 0.9;
+      if (mg.pos > 1) { mg.pos = 1; mg.dir = -1; } if (mg.pos < 0) { mg.pos = 0; mg.dir = 1; }
+      const n = document.querySelector('.mneedle'); if (n) n.style.left = (mg.pos * 100) + '%';
+    } else {
+      mg.pos = (mg.pos + mg.dir * dt * mg.cfg.speed * 110 + 360) % 360;
+      const f = document.querySelector('.dialface'); if (f) f.style.transform = `rotate(${-mg.pos}deg)`;
+      const inWin = angDist(mg.pos, mg.target) < mg.win / 2;
+      if (inWin && !mg.inWin) { snd('tick'); }
+      mg.inWin = inWin;
+      const d = document.querySelector('.dial'); if (d) d.classList.toggle('click', inWin);
+    }
+    mgRaf = requestAnimationFrame(mgLoop);
+  }
+  function mgTap() {
+    if (!mg || mg.done) return;
+    const hit = mg.kind === 'lock' ? (mg.pos >= mg.zs && mg.pos <= mg.zs + mg.cfg.zone) : mg.inWin;
+    if (hit) { mg.step++; mg.flash = 'hit'; snd(mg.kind === 'lock' ? 'pick' : 'clink'); if (window.Haptic) Haptic.play('medium'); }
+    else { mg.misses++; mg.flash = 'miss'; snd('bad'); }
+    if (mg.step >= mg.cfg.steps) { mg.done = true; mg.won = true; }
+    else if (mg.misses > mg.cfg.misses) { mg.done = true; mg.won = false; }
+    else if (hit) mgNew();
+    if (mg.done) {
+      cancelAnimationFrame(mgRaf);
+      if (mg.won) snd('unlock');
+      const won = mg.won;
+      setTimeout(() => {
+        if (!ui.modal || ui.modal.type !== 'mini') return;
+        const o = G.chooseMini(won); mg = null;
+        if (o) { ui.modal = o.result ? { type: 'result', r: o.result } : { type: 'outcome', o }; if (o.result) resultSound(o.result); else snd(won ? 'good' : 'bad'); }
+        else ui.modal = null;
+        render();
+      }, 750);
+    }
+  }
+
+  function mgPaint(st = mg) {
+    if (!st) return;
+    const $m = $ui.querySelector('.modal'); if (!$m) return;
+    $m.querySelectorAll('.pin').forEach((p, i) => p.classList.toggle('on', i < st.step));
+    $m.querySelectorAll('.life').forEach((l, i) => l.classList.toggle('gone', i < st.misses));
+    const b = $m.querySelector('.mtrack, .dial');
+    if (b && st.flash) { b.classList.remove('hit', 'miss'); void b.offsetWidth; b.classList.add(st.flash); }
+    st.flash = '';
+    const z = $m.querySelector('.mzone'); if (z && st.kind === 'lock') { z.style.left = (st.zs * 100) + '%'; }
+    const c = $m.querySelector('[data-act=minicancel]'); if (c && (st.step || st.misses)) c.remove();
+    if (st.done) {
+      $m.querySelector('[data-act=mtap].b1')?.classList.add('off');
+      if (b && !$m.querySelector('.mres')) b.insertAdjacentHTML('afterend', `<div class="mres ${st.won ? 'ok' : 'no'}">${st.won ? (st.kind === 'lock' ? 'Açıldı!' : 'Kasa açıldı!') : 'Olmadı...'}</div>`);
+    }
+  }
   // Tek seferlik ipuçları: oyuncu "Anladım" der ya da ekrandan/pencereden ayrılınca bir daha görünmez.
   const tipsShown = new Set();
   function tip(key, text) {
@@ -96,7 +178,7 @@
 
   function rail() {
     const S = G.s;
-    const items = [['hedef', 'map-2', 'Hedef'], ['yetenek', 'chart-arrows', 'Yetenek', S.sp], ['alet', 'tool', 'Alet'], ['karaborsa', 'building-warehouse', 'Karaborsa'], ['koleksiyon', 'crown', 'Koleksiyon', G.legendOffer() ? 1 : 0], ['gazete', 'news', 'Gazete'], ['ekip', 'users', 'Ekip', E.crew.filter(c => G.crewState(c) === 'ready').length]];
+    const items = [['hedef', 'map-2', 'Hedef'], ['yetenek', 'chart-arrows', 'Yetenek', S.sp], ['alet', 'tool', 'Alet'], ['karaborsa', 'building-warehouse', 'Karaborsa', (S.goods || []).length], ['koleksiyon', 'crown', 'Koleksiyon', G.legendOffer() ? 1 : 0], ['gazete', 'news', 'Gazete'], ['ekip', 'users', 'Ekip', E.crew.filter(c => G.crewState(c) === 'ready').length]];
     return `<nav class="rail">${items.map(([id, icon, name, badge, soon]) =>
       `<button class="ri ${ui.screen === id ? 'on' : ''} ${soon ? 'soon' : ''}" data-go="${id}">${badge ? `<span class="bdg">${badge}</span>` : ''}${ic(icon)}${name}</button>`).join('')}</nav>`;
   }
@@ -181,7 +263,9 @@
       const open = G.tierOpen(tr.id), n = E.targets.filter(t => t.tier === tr.id && G.cityOf(t) === city).length;
       return `<button class="tab ${tr.id === ui.tier ? 'on' : ''} ${open ? '' : 'lockd'}" data-tier="${tr.id}">${ic(open ? tr.icon : 'lock')}${tr.name}<span class="cnt">${n}</span></button>`;
     }).join('') : `<div class="mini" style="white-space:normal">${ic('info-circle')}${G.cityById[city].info || ''}</div>`;
-    return `<div class="targets"><div class="main">${cityBar()}<div class="tabs">${tabs}</div><div class="grid scroll" style="flex:1;min-height:0">${list.map(card).join('')}</div></div>
+    const nt = G.tonight();
+    const nchip = nt ? `<button class="nightchip" data-act="night" title="Bu gece">${ic(nt.icon)}${nt.name}</button>` : '';
+    return `<div class="targets"><div class="main">${cityBar()}<div class="tabs">${tabs}${nchip}</div><div class="grid scroll" style="flex:1;min-height:0">${list.map(card).join('')}</div></div>
       <aside class="detail">${detail(G.targetById[ui.sel])}</aside></div>`;
   }
 
@@ -277,7 +361,43 @@
       ${offerBox}<div class="shop" style="margin-top:14px">${sets}</div></div>`;
   }
 
+  // Karaborsa ekranının üstündeki sekme: mal al / mal sat
+  function kbSeg() {
+    const n = (G.s.goods || []).length;
+    return `<div class="seg"><button class="${ui.kb !== 'fence' ? 'on' : ''}" data-act="kbm">${ic('building-warehouse')}Karaborsa</button><button class="${ui.kb === 'fence' ? 'on' : ''}" data-act="kbf">${ic('hand-finger')}${E.fenceTitle || 'Yatakçılar'}${n ? `<span class="cnt">${n}</span>` : ''}</button></div>`;
+  }
+  const catName = { antika: 'antika', mucevher: 'mücevher', esya: 'eşya' };
+  function scrFence() {
+    const S = G.s, goods = S.goods || [], GD = E.goods || {};
+    const card = g => `<div class="item good">
+      <div class="hd"><div class="ic">${ic(g.icon)}</div><div><div class="nm">${g.name}</div><div class="ds">${g.from} · ${catName[g.cat] || g.cat} · değeri ~${fmt(g.v)} ${E.currency}</div></div></div>
+      <div class="offers">${E.fences.map(f => {
+        const o = G.fenceOffer(f.id, g.uid);
+        if (o.no) return `<div class="off na">${ic(f.icon)}<span class="fn">${f.short || f.name}</span><em>${o.no === 'only' ? 'Sadece antika alır' : 'Bu gece almıyor'}</em></div>`;
+        const pct = Math.round(o.price / g.v * 100);
+        return `<div class="off">${ic(f.icon)}<span class="fn">${f.short || f.name}${o.risk ? ` <span class="risk">${ic('urgent')}riskli</span>` : ''}</span>
+          ${o.haggled ? `<span class="hg">${ic('check')}pazarlık</span>` : `<button class="b2 sm" data-act="haggle" data-f="${f.id}" data-g="${g.uid}">Pazarlık</button>`}
+          <button class="buy sm ${pct >= 100 ? 'up' : 'down'}" data-act="sell" data-f="${f.id}" data-g="${g.uid}">${ic('coins')}${fmt(o.price)}<small>%${pct}</small></button></div>`;
+      }).join('')}</div></div>`;
+    return `<div class="paper"><div class="feed scroll">${kbSeg()}
+      <div class="page-h" style="margin-bottom:14px"><div><h1 style="font-size:20px;font-weight:500;margin:0">${E.fenceTitle}</h1><p>${E.fenceInfo}</p></div></div>
+      ${tip('yatakci', 'Her yatakçı farklı fiyat verir: biri güvenli ama ucuz, biri iyi öder ama riskli, biri sadece antika alır. Pazarlık teklifi yükseltebilir; tutmazsa o yatakçı bu gece o malı almaz.')}
+      ${goods.length ? `<div class="goods">${goods.map(card).join('')}</div>` : `<div class="empty">${ic('package')}<p>Elinde satacak mal yok. Başarılı işlerde ganimetin bir kısmı bazen eşya olarak gelir.</p></div>`}
+      </div>
+      <aside class="side scroll">
+        <h4>YATAKÇILAR</h4>
+        ${E.fences.map(f => `<div class="fence"><div class="fh">${ic(f.icon, 'au')}<b>${f.name}</b></div><div class="mini">${ic('map-pin')}${f.place}</div><p>${f.desc}</p>
+          <div class="ftags">${f.risk ? `<span class="tagx no">${ic('urgent')}%${Math.round(f.risk * 100)} takip riski</span>` : `<span class="tagx ok">${ic('shield-check')}Risksiz</span>`}${f.only ? `<span class="tagx au">Sadece antika</span>` : ''}<span class="tagx">%${Math.round(f.min * 100)}–${Math.round(f.max * 100)}</span></div></div>`).join('')}
+        <h4 style="margin-top:14px">PAZARLIK</h4>
+        <div class="stat"><span>Tutma şansı</span><b>%${Math.round(G.haggleChance() * 100)}</b></div>
+        <p class="mini" style="white-space:normal;margin:6px 0 0">${ic('info-circle')}Pazarlık ve Tatlı dil yetenekleri şansı artırır.</p>
+        <h4 style="margin-top:14px">DEPO</h4>
+        <div class="stat"><span>Elindeki mallar</span><b>${goods.length} / ${GD.max || 6}</b></div>
+        <p class="mini" style="white-space:normal;margin:6px 0 0">${ic('moon')}Teklifler her gece değişir.</p>
+      </aside></div>`;
+  }
   function scrKaraborsa() {
+    if (ui.kb === 'fence') return scrFence();
     const S = G.s, M = E.market, mk = G.market(), rates = G.gemRates();
     const wares = mk.stock.map((e, i) => {
       const it = G.itemById[e.id], st = G.marketState(i);
@@ -295,7 +415,7 @@
         <div class="mini">${ic(G.immediate(it) ? 'bolt' : 'hourglass')}${G.immediate(it) ? 'Hemen etkili' : 'Sonraki işte kullanılır'}</div>${btn}</div>`;
     }).join('');
     const buffs = G.activeBuffs();
-    return `<div class="paper"><div class="feed scroll"><div class="page-h" style="margin-bottom:14px"><div><h1 style="font-size:20px;font-weight:500;margin:0">${M.title}</h1><p>${M.info}</p></div></div>
+    return `<div class="paper"><div class="feed scroll">${kbSeg()}<div class="page-h" style="margin-bottom:14px"><div><h1 style="font-size:20px;font-weight:500;margin:0">${M.title}</h1><p>${M.info}</p></div></div>
       ${tip('karaborsa', 'Buradaki mallar bir sonraki işin için hazırlanır: şans, ganimet ya da güvenli kaçış verir. Mallar her gece değişir; bazen indirimli bir fırsat çıkar.')}
       <h3 class="sec">Bu geceki mallar</h3><div class="shop">${wares}</div></div>
       <aside class="side scroll">
@@ -387,6 +507,7 @@
       inner = `<div class="big" style="background:var(--${col});color:#0d1630">${ic(icon)}</div><h2>${title}</h2><p>${text}</p>
         <div class="chips">${chips.join('')}</div>
         ${r.levelUps ? `<div class="lvup">${ic('arrow-big-up-lines')} Seviye ${r.lv}! +${r.levelUps} yetenek puanı, +${r.levelUps} elmas</div>` : ''}
+        ${r.good ? `<div class="lvup goodline">${ic(r.good.icon)} Ganimetin bir kısmı eşya olarak geldi: ${r.good.name} (değeri ~${fmt(r.good.v)} ${E.currency}). Karaborsa'daki yatakçılara satabilirsin.</div>` : ''}
         ${r.found ? `<div class="lvup">${ic(r.found.icon)} Efsanevi bir eşya buldun: ${r.found.name}</div>` : ''}
         ${(r.sets || []).map(st => `<div class="lvup">${ic('crown')} Set tamamlandı: ${st.name}! ${st.desc}</div>`).join('')}
         ${r.secUp ? `<div class="mini" style="justify-content:center;margin:-6px 0 12px;white-space:normal">${ic('shield-lock')}${r.target.name} artık daha korunaklı: bir dahaki sefere daha zor, daha kârlı.</div>` : ''}
@@ -415,7 +536,9 @@
         <h2>${ev.title}</h2><p class="evtext">${ev.text}</p>
         ${tip('event', 'Ne yapacağına sen karar verirsin. Yanında yüzde yazan seçenekler risklidir: tutarsa iyi kazandırır, tutmazsa şansını düşürür. Bazı seçenekler için ekip, yetenek ya da alet gerekir.')}
         <div class="mini" style="justify-content:center;margin-bottom:14px">${ic('target')}Şu anki başarı şansın <b style="color:var(--tx);font-weight:500">%${st.p}</b></div>
-        <div class="choices">${ev.choices.map((c, i) => {
+        <div class="choices">${ev.mini ? `<button class="choice minich" data-act="mini">
+            <span class="ct">${ic(ev.mini.kind === 'safe' ? 'lock-square' : 'lock-open', 'au')}${ev.mini.text}</span>
+            <span class="tag" style="background:var(--p2);color:var(--au)">Beceri oyunu</span></button>` : ''}${ev.choices.map((c, i) => {
           const open = G.choiceOpen(c), hc = hintCol[c.hint] || 'mu';
           return `<button class="choice ${open ? '' : 'lock'}" ${open ? `data-choice="${i}"` : ''}>
             <span class="ct">${c.req ? ic(reqIc(c), open ? 'gem' : 'dm') : ''}${c.text}</span>
@@ -435,7 +558,7 @@
       const col = o.choice.chance == null ? 'au' : o.ok ? 'ok' : 'no';
       inner = `<div class="big" style="background:var(--${col});color:#0d1630">${ic(o.choice.chance == null ? 'player-play' : o.ok ? 'circle-check' : 'alert-triangle')}</div>
         <h2>${o.choice.text}</h2>
-        ${o.choice.chance != null ? `<div class="mini" style="justify-content:center;margin:-2px 0 8px;color:var(--${col})">${o.ok ? 'Şans yaver gitti' : 'Şans yüzüne gülmedi'}</div>` : ''}
+        ${o.choice.chance != null ? `<div class="mini" style="justify-content:center;margin:-2px 0 8px;color:var(--${col})">${o.choice.mini ? (o.ok ? 'Ustalığın konuştu' : 'Elin titredi') : o.ok ? 'Şans yaver gitti' : 'Şans yüzüne gülmedi'}</div>` : ''}
         <p class="evtext">${fx.text}</p>
         ${ch.length ? `<div class="chips">${ch.map(c => `<div class="rw" style="color:var(--${c[0]})">${ic(c[1])} ${c[2]}</div>`).join('')}</div>` : ''}
         ${st ? `<div class="mini" style="justify-content:center;margin-bottom:14px">${ic('target')}Başarı şansın şimdi <b style="color:var(--tx);font-weight:500">%${st.p}</b></div>` : ''}
@@ -460,6 +583,31 @@
           ? `<button class="b2" data-act="close">Kapat</button><button class="b1" data-act="claim">Ödülü al</button>`
           : `<button class="b2 ${skip ? '' : 'off'}" ${skip ? 'data-act="skipquest"' : ''}>${ic('refresh')}Başka görev</button><button class="b1" data-act="close">Tamam</button>`}</div>
         ${done ? '' : adBtn('skip', 'Bir kez daha görev değiştir')}`;
+    }
+    if (m.type === 'night') {
+      const n = G.tonight(), lines = nightLines(n);
+      inner = `<div class="big" style="background:var(--p3);color:var(--au)">${ic(n.icon)}</div><div class="mini" style="justify-content:center;margin-bottom:4px">BU GECE</div><h2>${n.name}</h2><p>${n.desc}</p>
+        ${lines.length ? `<div class="awl">${lines.map(l => `<div class="awr"><span class="awi" style="color:var(--${l.tone})">${ic(l.icon)}</span><span>${l.text}</span></div>`).join('')}</div>` : ''}
+        <p class="mini" style="justify-content:center;margin:0 0 14px">${ic('clock')}Gece yarısı yeni bir gece başlar.</p>
+        <button class="b1" data-act="close">Tamam</button>`;
+    }
+    if (m.type === 'mini') {
+      if (!mg) { ui.modal = { type: 'event' }; return modal(); }
+      const c = mg.cfg, lock = mg.kind === 'lock';
+      const pins = Array.from({ length: c.steps }, (_, i) => `<span class="pin ${i < mg.step ? 'on' : ''}"></span>`).join('');
+      const lives = Array.from({ length: c.misses + 1 }, (_, i) => `<span class="life ${i < mg.misses ? 'gone' : ''}">${ic('heart')}</span>`).join('');
+      const board = lock
+        ? `<div class="mtrack ${mg.flash}" data-act="mtap"><div class="mzone" style="left:${mg.zs * 100}%;width:${c.zone * 100}%"></div><div class="mneedle" style="left:${mg.pos * 100}%"></div></div>`
+        : `<div class="dial ${mg.flash}" data-act="mtap"><div class="dialface" style="transform:rotate(${-mg.pos}deg)">${Array.from({ length: 40 }, (_, i) => `<i style="transform:rotate(${i * 9}deg)"${i % 5 ? '' : ' class="big5"'}></i>`).join('')}</div><div class="dialmark"></div><div class="dialhub">${ic('lock-square')}</div></div>`;
+      const res = mg.done ? `<div class="mres ${mg.won ? 'ok' : 'no'}">${mg.won ? (lock ? 'Açıldı!' : 'Kasa açıldı!') : 'Olmadı...'}</div>` : '';
+      inner = `<h2 style="margin-bottom:4px">${lock ? 'Kilidi aç' : 'Şifreyi dinle'}</h2>
+        <p class="mini" style="justify-content:center;white-space:normal;margin:0 0 10px">${lock ? 'Gösterge yeşil alana girdiğinde dokun.' : 'Çark tıkladığında (çentik parladığında) dokun.'} ${c.steps} ${lock ? 'pim' : 'rakam'}, ${c.misses} hata hakkın var.</p>
+        ${tip('mini', lock ? 'Her başarılı dokunuş bir pimi yerine oturtur. Maymuncuk yeteneği ve yağlı maymuncuk yeşil alanı genişletir.' : 'Her rakamda çark yön değiştirir. Sesi açıksa tık sesini duyarsın, titreşim açıksa hissedersin. Kasa kulağı yeteneği ve stetoskop işini kolaylaştırır.')}
+        <div class="mstat"><div class="pins">${pins}</div><div class="lives">${lives}</div></div>
+        ${board}${res}
+        ${c.helps.length ? `<div class="mini" style="justify-content:center;margin-top:8px">${ic('sparkles', 'gem')}Yardım eden: ${c.helps.join(', ')}</div>` : ''}
+        <div class="btn-row" style="margin-top:12px">${!mg.step && !mg.misses && !mg.done ? '<button class="b2" data-act="minicancel">Vazgeç</button>' : ''}<button class="b1 ${mg.done ? 'off' : ''}" data-act="mtap">${lock ? 'Şimdi!' : 'Dur!'}</button></div>`;
+      mg.flash = '';
     }
     if (m.type === 'ach') {
       const list = G.achState(), got = list.filter(x => x.done).length;
@@ -581,6 +729,7 @@
     const el = e.target.closest('[data-tip],[data-gempack],[data-ad],[data-go],[data-tier],[data-sel],[data-act],[data-learn],[data-buy],[data-hire],[data-train],[data-dismiss],[data-mbuy],[data-choice],[data-mastery],[data-city]');
     if (!el) return;
     const d = el.dataset;
+    if (d.act === 'mtap') { const cur = mg; mgTap(); mgPaint(cur); return; } // mini oyun: pencereyi yeniden çizme, sadece değişeni güncelle
     if (window.Sound) Sound.unlock();
     if (!d.choice) snd('tap');
     if (d.tip) { G.markSeen('tip_' + d.tip); tipsShown.delete(d.tip); render(); return; }
@@ -635,6 +784,24 @@
         case 'buygem': if (G.buyGem() && (snd('gem'), true)) toast(`${ic('diamond', 'gem')}Bir elmas alındı`); break;
         case 'menu': ui.modal = { type: 'menu' }; break;
         case 'ach': ui.modal = { type: 'ach' }; break;
+        case 'night': ui.modal = { type: 'night' }; break;
+        case 'mini': mgStart(); if (mg) ui.modal = { type: 'mini' }; break;
+        case 'mtap': mgTap(); break;
+        case 'minicancel': cancelAnimationFrame(mgRaf); mg = null; ui.modal = { type: 'event' }; break;
+        case 'kbm': ui.kb = 'market'; break;
+        case 'kbf': ui.kb = 'fence'; break;
+        case 'haggle': {
+          const f = G.fenceById[d.f], r = G.haggle(d.f, d.g);
+          if (r && r.ok) { snd('coin'); toast(`${ic('arrow-up-right', 'ok')}${f.name} teklifi yükseltti: ${fmt(r.offer.price)} ${E.currency}`); }
+          else if (r) { snd('bad'); toast(`${ic('mood-angry', 'no')}${f.name} alındı: "Bu malı bu gece başka kapıya götür!"`); }
+          break;
+        }
+        case 'sell': {
+          const r = G.sellGood(d.f, d.g);
+          if (r) { snd('coin'); toast(`${ic('coins', 'au')}${r.good.name} satıldı: +${fmt(r.price)} ${E.currency}`);
+            if (r.heatUp) setTimeout(() => { snd('whistle'); toast(`${ic('urgent', 'no')}Malın izi sürüldü: ${G.heatLabel()} +1`); }, 900); }
+          break;
+        }
         case 'gcshow': if (window.GC) GC.show(); break;
         case 'togglesfx': if (window.Sound) { Sound.sfx = !Sound.sfx; snd('tap'); } break;
         case 'togglemusic': if (window.Sound) Sound.music = !Sound.music; break;
@@ -671,6 +838,11 @@
       return;
     }
     const st = G.heistStatus();
+    // Günün ilk açılışında bu gecenin havasını duyur
+    const nt = G.tonight(), nk = new Date().toDateString() + '|' + (nt && nt.id);
+    if (nt && !ui.modal && G.s.nightSeen !== nk && !document.getElementById('splash') && !(window.Tour && Tour.active) && !G.dailyState().ready) {
+      G.s.nightSeen = nk; toast(`${ic(nt.icon, 'au')}Bu gece: <b>${nt.name}</b>. Ayrıntı için hedeflerin üstündeki gece düğmesine dokun.`);
+    }
     if (!ui.modal && !(st && (st.pending || st.done)) && !document.getElementById('splash') && !(window.Tour && Tour.active) && G.dailyState().ready) {
       ui.modal = { type: 'daily' }; snd('gem'); render();
     }
@@ -680,7 +852,7 @@
       if (ui.modal && (ui.modal.type === 'outcome' || ui.modal.type === 'away')) return; // oyuncu önce okusun, sonra sonuç gelsin
       const r = G.finishHeist(); lastPhase = null; lastAfford = null; if (r) { ui.modal = { type: 'result', r }; resultSound(r); render(); } return;
     }
-    if (st.pending) { if (!ui.modal || (ui.modal.type !== 'event' && ui.modal.type !== 'outcome' && ui.modal.type !== 'away')) { ui.modal = { type: 'event' }; snd(st.pending.sfx && window.Sound && Sound.has(st.pending.sfx) ? st.pending.sfx : 'alert'); render(); } return; }
+    if (st.pending) { if (!ui.modal || (ui.modal.type !== 'event' && ui.modal.type !== 'outcome' && ui.modal.type !== 'away' && ui.modal.type !== 'mini')) { ui.modal = { type: 'event' }; snd(st.pending.sfx && window.Sound && Sound.has(st.pending.sfx) ? st.pending.sfx : 'alert'); render(); } return; }
     const afford = G.s.gems >= G.rushCost();
     if (st.phase !== lastPhase || afford !== lastAfford) { if (lastPhase != null && st.phase !== lastPhase) snd('phase'); lastPhase = st.phase; lastAfford = afford; render(); return; }
     $ui.querySelectorAll('[data-htotal]').forEach(e => { e.textContent = mmss(st.totalLeft); });

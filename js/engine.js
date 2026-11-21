@@ -19,7 +19,7 @@
     return {
       v: 1, day: 0, lv: 1, xp: 0, money: E.start.money, gems: E.start.gems, fame: 0, heat: 0, sp: 1,
       skills: [], tools: [], crew: {}, mastery: {}, sec: {}, legends: {},
-      city: homeCity, cities: [homeCity], heatBy: {}, collection: {}, setsDone: {}, ach: {}, legendOffer: null, buffs: [], market: null, heist: null, scouted: {}, cooldown: {}, streak: 0,
+      city: homeCity, cities: [homeCity], heatBy: {}, collection: {}, setsDone: {}, ach: {}, goods: [], legendOffer: null, buffs: [], market: null, heist: null, scouted: {}, cooldown: {}, streak: 0,
       stats: { robs: 0, ok: 0, fail: 0, caught: 0, loot: 0, scouts: 0 },
       quest: { i: 0, prog: 0 },
       news: [{ day: 0, kind: 'intro', h: E.news.intro.h, b: E.news.intro.b }],
@@ -80,6 +80,21 @@
   const lootRange = t => { const k = 1 + SEC.loot * security(t); return [Math.round(t.loot[0] * k), Math.round(t.loot[1] * k)]; };
   const xpFor = t => Math.round(t.xp * (1 + SEC.xp * security(t)));
 
+  // Gecenin havası: takvim gününe göre tek bir durum (aynı gün herkes için aynı).
+  const strHash = str => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; };
+  const seeded = str => { let a = strHash(str); return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; };
+  const NIGHTS = E.nights || [];
+  function tonight(now = new Date()) {
+    if (!NIGHTS.length) return null;
+    const r = seeded('gece|' + E.id + '|' + dayKey(now))() * NIGHTS.reduce((a, n) => a + (n.w || 1), 0);
+    let acc = 0;
+    for (const n of NIGHTS) { acc += n.w || 1; if (r < acc) return n; }
+    return NIGHTS[0];
+  }
+  // Bu gecenin etkisi belirli bir hedefe uygulanıyor mu (şans etkisi tiers ile sınırlı olabilir)
+  const nightP = t => { const n = tonight(), f = n && n.fx; return f && f.p && (!f.tiers || f.tiers.includes(t.tier)) ? f.p : 0; };
+  const nightFx = k => { const n = tonight(); return n && n.fx && n.fx[k] != null ? n.fx[k] : null; };
+
   function odds(t) {
     const ef = effects();
     const rows = [{ icon: 'target', text: 'Temel şans', v: t.base, base: true }];
@@ -94,12 +109,13 @@
     const sl = security(t);
     if (sl > 0) rows.push({ icon: 'shield-lock', text: `${SEC.label} · ${sl}. seviye`, v: -SEC.penalty * sl });
     if (S.heat > 0) rows.push({ icon: 'urgent', text: heatLabel(), v: -5 * S.heat });
+    const np = nightP(t); if (np) rows.push({ icon: tonight().icon, text: tonight().name, v: np, night: true });
     const p = Math.max(5, Math.min(95, rows.reduce((a, r) => a + r.v, 0)));
     return { rows, p };
   }
   const buffSum = kind => S.buffs.reduce((a, id) => a + (itemById[id] && itemById[id].kind === kind ? (itemById[id].v || 1) : 0), 0);
   const lootMult = () => 1 + effects().filter(e => e.kind === 'loot').reduce((a, e) => a + e.v, 0) + buffSum('lootBoost');
-  const heatMult = () => effects().filter(e => e.kind === 'heat').reduce((a, e) => a * e.v, 1);
+  const heatMult = () => effects().filter(e => e.kind === 'heat').reduce((a, e) => a * e.v, 1) * (nightFx('heat') || 1);
 
   function dateOf(day) {
     const d = new Date(E.startDate.y, E.startDate.m, E.startDate.d + day);
@@ -267,7 +283,7 @@
     if (a.kind.startsWith('tier:')) { const tr = a.kind.slice(5); return Object.keys(S.sec).filter(id => targetById[id] && targetById[id].tier === tr).length; }
     switch (a.kind) {
       case 'ok': return st.ok; case 'robs': return st.robs; case 'loot': return st.loot; case 'caught': return st.caught; case 'scouts': return st.scouts;
-      case 'bestStreak': return Math.max(st.bestStreak || 0, S.streak); case 'events': return st.events || 0; case 'dailyBest': return st.dailyBest || 0;
+      case 'bestStreak': return Math.max(st.bestStreak || 0, S.streak); case 'events': return st.events || 0; case 'miniWins': return st.miniWins || 0; case 'sold': return st.sold || 0; case 'dailyBest': return st.dailyBest || 0;
       case 'lv': return S.lv; case 'cities': return S.cities.length; case 'crew': return crewCount(); case 'skills': return S.skills.length;
       case 'crewMax': return Object.keys(S.crew).filter(id => S.crew[id] >= 3).length;
       case 'sets': return Object.keys(S.setsDone).length; case 'legends': return Object.keys(S.legends).length;
@@ -297,7 +313,7 @@
   function heistTimes(t) {
     const rules = (E.heist && E.heist.timeByDifficulty) || [];
     const p = odds(t).p, r = rules.find(x => p >= x.min);
-    const k = r ? r.mult : 1;
+    const k = (r ? r.mult : 1) * (nightFx('time') || 1);
     return baseTimes(t).map(s => Math.max(5, Math.round(s * k)));
   }
   const eventById = by(E.events || []);
@@ -343,7 +359,7 @@
     S.heist = {
       id, start: Date.now(), times, events: scheduleEvents(t, times), log: [],
       tools: S.tools.filter(x => { const tl = toolById[x]; return tl && (tl.uses || toolHelps(tl, t)); }),
-      snap: { p: odds(t).p, loot: lootMult(), xp: 1 + buffSum('xpBoost'), safe: buffSum('safeFail') > 0, used: S.buffs.map(b => itemById[b].name) },
+      snap: { p: odds(t).p, loot: lootMult() + (nightFx('loot') || 0), xp: 1 + buffSum('xpBoost') + (nightFx('xp') || 0), night: (tonight() || {}).id, safe: buffSum('safeFail') > 0, used: S.buffs.map(b => itemById[b].name) },
     };
     S.buffs = [];
     save(); return true;
@@ -388,19 +404,41 @@
   }
   const choiceChance = c => c.chance == null ? null : Math.max(5, Math.min(95, c.chance - choicePenalty()));
   function choose(idx) {
-    const h = S.heist, st = heistStatus();
+    const st = heistStatus();
     if (!st || !st.pending) return null;
     const ev = st.pending, c = ev.choices[idx];
     if (!c || !choiceOpen(c)) return null;
-    const pe = h.events.find(e => !e.done && e.id === ev.id);
     const ok = c.chance == null || Math.random() * 100 < choiceChance(c);
+    return applyChoice(ev, c, ok);
+  }
+  // Mini oyun (kilit / kasa): sonucu oyuncunun becerisi belirler.
+  function chooseMini(won) {
+    const st = heistStatus();
+    if (!st || !st.pending || !st.pending.mini) return null;
+    const ev = st.pending, m = ev.mini;
+    S.stats.minis = (S.stats.minis || 0) + 1; if (won) S.stats.miniWins = (S.stats.miniWins || 0) + 1;
+    return applyChoice(ev, { text: m.text, ok: m.ok, fail: m.fail, chance: 0, mini: true }, !!won);
+  }
+  // Mini oyunun zorluğu: hedef büyüdükçe zorlaşır, ilgili yetenek ve alet kolaylaştırır.
+  function miniSetup(kind) {
+    const h = S.heist, t = h && targetById[h.id];
+    const ti = t ? Math.max(0, E.tiers.findIndex(x => x.id === t.tier)) : 0;
+    let zone = 0.24 - ti * 0.035, speed = 0.75 + ti * 0.18;
+    const helps = kind === 'safe' ? { skill: 'kasa', tool: 'stetoskop' } : { skill: 'maymuncuk', tool: 'yag' };
+    if (has(helps.skill)) zone += 0.05;
+    if (S.tools.includes(helps.tool)) zone += 0.05;
+    return { zone: Math.min(0.4, zone), speed, steps: 3, misses: 2, helps: [has(helps.skill) && (skillById[helps.skill] || {}).name, S.tools.includes(helps.tool) && (toolById[helps.tool] || {}).name].filter(Boolean) };
+  }
+  function applyChoice(ev, c, ok) {
+    const h = S.heist;
+    const pe = h.events.find(e => !e.done && e.id === ev.id);
     const fx = (ok ? c.ok : c.fail) || {};
     pe.done = true;
     S.stats.events = (S.stats.events || 0) + 1;
     h.start = Date.now() - pe.at * 1000; // sayaç olayın olduğu yerden devam eder
     if (c.req && c.req.tool) { h.tools = h.tools || []; if (!h.tools.includes(c.req.tool)) h.tools.push(c.req.tool); }
     const out = { event: ev, choice: c, ok, fx };
-    h.log.push({ title: ev.title, choice: c.text, text: fx.text, ok, roll: c.chance != null });
+    h.log.push({ title: ev.title, choice: c.text, text: fx.text, ok, roll: c.chance != null, mini: !!c.mini });
     if (fx.abort) {
       S.heist = null; S.day++;
       const t = targetById[h.id], xp = Math.round(t.xp / 6);
@@ -472,8 +510,17 @@
     if (ok) {
       const sl = security(t), lr = lootRange(t);
       const gross = Math.round(rand(lr[0], lr[1]) * snap.loot);
-      const cut = Math.round(gross * crewCut()), loot = gross - cut;
+      const cut = Math.round(gross * crewCut()); let loot = gross - cut;
       res.cut = cut;
+      // Ganimetin bir kısmı eşya olarak gelebilir (yatakçıya satılır)
+      const GD = E.goods, pool = GD && GD.items[t.tier];
+      S.goods = S.goods || [];
+      if (pool && S.goods.length < GD.max && Math.random() < GD.chance) {
+        const g = pick(pool), v = Math.max(5, Math.round(loot * GD.share));
+        loot -= v;
+        res.good = { uid: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), name: g.name, icon: g.icon, cat: g.cat, v, from: t.name };
+        S.goods.push(res.good);
+      }
       S.money += loot; S.stats.ok++; S.stats.loot += loot;
       res.xp = Math.round(xpFor(t) * xpMult);
       S.xp += res.xp; S.fame += t.fame; S.streak++; S.stats.bestStreak = Math.max(S.stats.bestStreak || 0, S.streak);
@@ -505,6 +552,42 @@
     res.levelUps = levelUps(); res.lv = S.lv;
     save();
     return res;
+  }
+
+  // Yatakçılar: her gece her eşya için farklı teklif. Pazarlık bir kez yapılır: ya teklif yükselir
+  // ya da yatakçı alınır ve o gece o malı almaz.
+  const FENCES = E.fences || [], fenceById = by(FENCES);
+  function haggleState() {
+    if (!S.haggle || S.haggle.day !== S.day) S.haggle = { day: S.day, m: {} };
+    return S.haggle.m;
+  }
+  function fenceOffer(fid, uid) {
+    const f = fenceById[fid], g = (S.goods || []).find(x => x.uid === uid);
+    if (!f || !g) return null;
+    if (f.only && !f.only.includes(g.cat)) return { no: 'only' };
+    const hm = haggleState()[fid + '|' + uid];
+    if (hm === -1) return { no: 'angry' };
+    const base = f.min + seeded(fid + '|' + uid + '|' + S.day)() * (f.max - f.min);
+    return { price: Math.round(g.v * base * (hm || 1)), haggled: !!hm, risk: f.risk || 0 };
+  }
+  const haggleChance = () => 0.55 + (has('pazarlik') ? 0.15 : 0) + (has('tatli') ? 0.05 : 0);
+  function haggle(fid, uid) {
+    const o = fenceOffer(fid, uid);
+    if (!o || o.no || o.haggled) return null;
+    const k = fid + '|' + uid, m = haggleState();
+    if (Math.random() < haggleChance()) { m[k] = 1.12 + Math.random() * 0.12; save(); return { ok: true, offer: fenceOffer(fid, uid) }; }
+    m[k] = -1; save(); return { ok: false };
+  }
+  function sellGood(fid, uid) {
+    const o = fenceOffer(fid, uid);
+    if (!o || o.no) return null;
+    const g = S.goods.find(x => x.uid === uid);
+    S.goods = S.goods.filter(x => x.uid !== uid);
+    S.money += o.price; S.stats.loot += o.price; S.stats.sold = (S.stats.sold || 0) + 1;
+    bump('loot', { amount: o.price });
+    const out = { good: g, price: o.price, fence: fenceById[fid] };
+    if (o.risk && Math.random() < o.risk) { S.heat = Math.min(5, S.heat + 1); out.heatUp = true; }
+    save(); return out;
   }
 
   function scout(id) {
@@ -681,6 +764,7 @@
     market, marketState, buyMarket, gemRates, sellGem, buyGem, activeBuffs, immediate,
     crewSlots, crewCount, crewCut, crewState, trainCost, hire, train, dismiss,
     xpCap, tierOpen, targetOpen, cooldownLeft, scoutCost, requirements, odds, dateOf,
+    tonight, nightP, chooseMini, miniSetup, fenceById, fenceOffer, haggle, haggleChance, sellGood,
     achById, achState, checkAch, touch, awayCheck, crewEarnings, dailyState, claimDaily, quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest, canAd, adReward, addGems,
     pickPattern, rob, startHeist, heistStatus, finishHeist, rushCost, rush, heistTimes, baseTimes, choose, choiceChance, choicePenalty, choiceOpen, reqText, rushTarget,
     scout, rest, bribe, learn, buy, reset, markSeen,

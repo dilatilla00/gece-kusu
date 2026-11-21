@@ -9,7 +9,7 @@
   // ---------- Titreşim ----------
   // Ses adına göre titreşim. Soygun sırasındaki ortam sesleri (maymuncuk, adım...) titreştirmez.
   const MAP = {
-    tap: 'selection', phase: 'light', unlock: 'medium', door: 'light', coin: 'light', gem: 'light',
+    tap: 'selection', tick: 'selection', phase: 'light', unlock: 'medium', door: 'light', coin: 'light', gem: 'light',
     good: 'success', success: 'success', reward: 'success', learn: 'success', levelup: 'success', legend: 'success',
     bad: 'warning', fail: 'warning', whistle: 'warning', alert: 'heavy', caught: 'error', break: 'rigid',
   };

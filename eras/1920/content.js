@@ -91,7 +91,7 @@ window.ERA = {
         { text: 'Hızla içeri dal', hint: 'Riskli', chance: 35, ok: { time: -15, p: 10, text: 'Köpek daha ne olduğunu anlamadan içerideydin.' }, fail: { p: -20, text: 'Köpek paçana yapıştı. Pantolonun yırtıldı, ses çok çıktı.' } },
         { text: 'Bu gecelik vazgeç', hint: 'Güvenli', ok: { abort: true, text: 'Sessizce geri çekildin. Başka bir gece.' } },
       ] },
-    { id: 'kilit', sfx: 'jam', phase: 0, icon: 'lock', title: 'Kilit sıkıştı', text: 'Maymuncuk kilidin içinde takıldı. Zorlarsan kırılabilir.',
+    { id: 'kilit', sfx: 'jam', phase: 0, mini: { kind: 'lock', text: 'Kendin aç', ok: { p: 8, time: -10, text: 'Pimler tek tek yerine oturdu. Kilit sessizce açıldı.' }, fail: { p: -12, time: 10, text: 'Maymuncuk kaydı, kilit iyice sıkıştı. Zaman kaybettin.' } }, icon: 'lock', title: 'Kilit sıkıştı', text: 'Maymuncuk kilidin içinde takıldı. Zorlarsan kırılabilir.',
       choices: [
         { text: 'Kilitçi Nuri halletsin', hint: 'Güvenli', req: { crew: 'nuri' }, ok: { p: 10, time: -10, text: 'Nuri iki saniyede kilidi açtı. "Bilmece çözüldü."' } },
         { text: 'Kilit kırıcıyı kullan', hint: 'Güvenli', req: { tool: 'kilitkirici' }, ok: { p: 6, time: -5, text: 'Kilit kırıcı işini sessizce yaptı.' } },
@@ -146,7 +146,7 @@ window.ERA = {
         { text: 'Ne bulduysan al, çık', hint: 'Güvenli', ok: { loot: -0.4, p: 12, text: 'Çantanın yarısı boş ama tenin sağlam.' } },
         { text: 'Sessizce devam et', hint: 'Riskli', chance: 35, ok: { loot: 0.3, text: 'Ayak sesleri durdu. Sen devam ettin, hatta biraz fazlasını buldun.' }, fail: { p: -20, heat: 1, text: 'Merdivende bir şamdan belirdi. Koşmak zorunda kaldın.' } },
       ] },
-    { id: 'kasa', sfx: 'safe', phase: 1, icon: 'lock-square', title: 'Gizli bölme', text: 'Halının altında bir kapak buldun. Altında küçük, kilitli bir kasa duruyor.',
+    { id: 'kasa', sfx: 'safe', phase: 1, mini: { kind: 'safe', text: 'Şifreyi dinle', ok: { loot: 0.6, time: 10, text: 'Üç tık, kapak açıldı. İçinde altınlar parlıyor.' }, fail: { time: 20, p: -8, text: 'Çark bir türlü oturmadı. Kasayı bırakmak zorunda kaldın.' } }, icon: 'lock-square', title: 'Gizli bölme', text: 'Halının altında bir kapak buldun. Altında küçük, kilitli bir kasa duruyor.',
       choices: [
         { text: 'Yorgo açsın', hint: 'Güvenli', req: { crew: 'yorgo' }, ok: { loot: 0.5, time: 10, text: 'Yorgo kulağını kasaya dayadı. Üç tık, kapak açıldı.' } },
         { text: 'Stetoskopla dinle', hint: 'Güvenli', req: { tool: 'stetoskop' }, ok: { loot: 0.4, time: 15, text: 'Çarkların sesi tek tek duyuldu. Kasa açıldı.' } },
@@ -191,7 +191,7 @@ window.ERA = {
         { text: 'Sarkacı durdur', hint: 'Güvenli', ok: { time: 10, text: 'Saat sustu. Ev sahibi sabah saatin bozulduğunu sanacak.' } },
         { text: 'Kıpırdamadan bitmesini bekle', hint: 'Yavaş', ok: { time: 15, text: 'Saat sustu. Kimse uyanmadı.' } },
       ] },
-    { id: 'cekmece', sfx: 'jewel', phase: 1, icon: 'box', title: 'Kilitli mücevher kutusu', text: 'Tuvalet masasında sedef kakmalı, küçük bir kutu. Kilitli.',
+    { id: 'cekmece', sfx: 'jewel', phase: 1, mini: { kind: 'lock', text: 'Kendin aç', ok: { loot: 0.4, text: 'Minik kilit parmaklarının arasında teslim oldu. İçi inci dolu.' }, fail: { p: -12, text: 'Kilit dişi kırıldı, çıt sesi koridorda yankılandı.' } }, icon: 'box', title: 'Kilitli mücevher kutusu', text: 'Tuvalet masasında sedef kakmalı, küçük bir kutu. Kilitli.',
       choices: [
         { text: 'Kilitçi Nuri açsın', hint: 'Güvenli', req: { crew: 'nuri' }, ok: { loot: 0.4, text: 'Nuri saç tokasıyla açtı. İçi inci dolu.' } },
         { text: 'Maymuncukla aç', hint: 'Güvenli', req: { skill: 'maymuncuk' }, ok: { loot: 0.3, time: 10, text: 'Küçük kilit büyük ustalık istemedi.' } },
@@ -225,7 +225,7 @@ window.ERA = {
         { text: 'Kalabalığa karış', hint: 'Orta', chance: 60, ok: { text: 'Kahveden çıkanların arasına karıştın, kimse fark etmedi.' }, fail: { p: -15, text: 'Biri kolundan tuttu. Zor kurtuldun.' } },
         { text: 'Ganimetin bir kısmını bırak', hint: 'Güvenli', ok: { loot: -0.3, p: 10, text: 'Hafifleyen çantayla daha hızlı koştun.' } },
       ] },
-    { id: 'kapi', sfx: 'handle', phase: 2, icon: 'door', title: 'Kapı kilitlenmiş', text: 'Girdiğin kapı dışarıdan kilitlenmiş. Biri seni fark etmiş olabilir.',
+    { id: 'kapi', sfx: 'handle', phase: 2, mini: { kind: 'lock', text: 'Kilidi içeriden aç', ok: { p: 5, time: -5, text: 'Kilit birkaç hamlede açıldı. Kapıdan süzüldün.' }, fail: { p: -10, time: 15, text: 'Kilit inatla direndi. Sonunda açıldı ama gürültü oldu.' } }, icon: 'door', title: 'Kapı kilitlenmiş', text: 'Girdiğin kapı dışarıdan kilitlenmiş. Biri seni fark etmiş olabilir.',
       choices: [
         { text: 'Halatla pencereden in', hint: 'Güvenli', req: { tool: 'halat' }, ok: { p: 5, time: -5, text: 'Halat kancası pervaza takıldı, sessizce aşağı süzüldün.' } },
         { text: 'Pencereden atla', hint: 'Riskli', chance: 45, ok: { time: -5, text: 'Çiçek tarhına düştün ama yürüyebiliyorsun.' }, fail: { p: -15, text: 'Ayağın burkuldu. Kaçış yavaşladı.' } },
@@ -266,6 +266,55 @@ window.ERA = {
 
   // Şehirler: ilki başlangıç şehri. Diğerleri seviye gelince bilet ve vize (cost) ödenerek açılır, sonra aralarında serbestçe gidilir.
   // Her şehrin kendi takibi var: bir şehirde ortalık kızışınca başka bir şehre kaçabilirsin.
+  // Gecenin havası: her takvim gününe bir durum düşer (herkes için aynı gün aynı durum).
+  // Etkiler: p (şans, tiers ile sınırlanabilir), loot (ganimet çarpanına ek), heat (fark edilme çarpanı),
+  // time (soygun süresi çarpanı), xp (tecrübe çarpanına ek). w: çıkma ağırlığı.
+  nights: [
+    { id: 'sakin', name: 'Sakin gece', icon: 'moon-stars', w: 4, desc: 'Şehir uykuda. Ne iyi ne kötü; her şey sana bağlı.', fx: {} },
+    { id: 'sis', name: 'Sisli gece', icon: 'mist', w: 2, desc: 'Boğazdan çöken sis sokakları yuttu. Kaçarken kimse seni seçemez.', fx: { heat: 0.6 } },
+    { id: 'yagmur', name: 'Sağanak', icon: 'cloud-rain', w: 2, desc: 'Yağmur damlara vuruyor, adım sesleri duyulmuyor. Ama yollar çamur.', fx: { p: 5, time: 1.15 } },
+    { id: 'dolunay', name: 'Dolunay', icon: 'moon', w: 1, desc: 'Her yer gündüz gibi aydınlık. Zor bir gece, ama zor gecelerden çok şey öğrenilir.', fx: { p: -5, xp: 0.3 } },
+    { id: 'bayram', name: 'Bayram gecesi', icon: 'confetti', w: 1, desc: 'Ev halkı akrabaya gitti, evler boş. Ama sokaklar kalabalık ve herkes uyanık.', fx: { p: 10, tiers: ['ev'], heat: 1.3 } },
+    { id: 'balo', name: 'Balo gecesi', icon: 'glass-full', w: 1, desc: 'Zenginler baloda, mücevherlerini de takıp gittiler. Mağazalar ve müzeler bu gece daha boş.', fx: { p: 8, tiers: ['magaza', 'muze'] } },
+    { id: 'grev', name: 'Tramvay grevi', icon: 'bus-off', w: 1, desc: 'Tramvaylar işlemiyor, sokaklar sessiz. İşler daha çabuk biter.', fx: { time: 0.8 } },
+    { id: 'teftis', name: 'Zabıta teftişi', icon: 'shield-half', w: 1, desc: 'Bu gece müfettiş şehirde; bekçiler tetikte. Riskli gece, ama telaşlı tüccarlar kasayı açık unutuyor.', fx: { heat: 1.4, loot: 0.2 } },
+    { id: 'lodos', name: 'Lodos', icon: 'wind', w: 1, desc: 'Rüzgâr kepenkleri döverken bir kilit sesi kimsenin umurunda değil. Dükkânlarda iş kolay.', fx: { p: 8, tiers: ['dukkan'] } },
+  ],
+
+  // Çalıntı mallar: başarılı işlerde ganimetin bir kısmı eşya olarak gelir; yatakçıya satılır.
+  // share: eşyanın ganimetten aldığı pay, chance: eşya çıkma olasılığı, max: elde tutulabilecek eşya sayısı.
+  goods: {
+    chance: 0.35, share: 0.4, max: 6,
+    items: {
+      ev: [
+        { name: 'Gümüş şamdan', icon: 'candle', cat: 'esya' }, { name: 'Altın cep saati', icon: 'clock', cat: 'mucevher' },
+        { name: 'İnci kolye', icon: 'diamond', cat: 'mucevher' }, { name: 'Samur kürk', icon: 'shirt', cat: 'esya' },
+        { name: 'Sedef kakmalı kutu', icon: 'box', cat: 'antika' },
+      ],
+      dukkan: [
+        { name: 'Top top ipek kumaş', icon: 'texture', cat: 'esya' }, { name: 'Gümüş tepsi', icon: 'circle', cat: 'esya' },
+        { name: 'Bir kese altın lira', icon: 'coins', cat: 'mucevher' }, { name: 'Bakır semaver', icon: 'cup', cat: 'antika' },
+      ],
+      magaza: [
+        { name: 'İsviçre saati', icon: 'clock-hour-4', cat: 'mucevher' }, { name: 'Fransız parfümleri', icon: 'perfume', cat: 'esya' },
+        { name: 'Pırlanta yüzük', icon: 'diamond', cat: 'mucevher' }, { name: 'Kristal avize', icon: 'bulb', cat: 'esya' },
+      ],
+      muze: [
+        { name: 'Murassa hançer', icon: 'sword', cat: 'antika' }, { name: 'Hat levhası', icon: 'writing', cat: 'antika' },
+        { name: 'Yağlı boya tablo', icon: 'photo', cat: 'antika' }, { name: 'Bizans sikkesi', icon: 'coin', cat: 'antika' },
+      ],
+    },
+  },
+  // Yatakçılar: her biri her gece her eşyaya farklı teklif verir (min–max arası, değerin katı).
+  // risk: satışta zabıta takibinin artma olasılığı. only: sadece bu türleri alır.
+  fences: [
+    { id: 'bedros', name: 'Kuyumcu Bedros', short: 'Bedros', place: 'Kapalıçarşı', icon: 'building-store', min: 0.62, max: 0.78, risk: 0, desc: 'Az verir ama soru sormaz. Parası hemen, sesi çıkmaz.' },
+    { id: 'necmi', name: 'Kör Necmi', short: 'Necmi', place: 'Galata rıhtımı', icon: 'anchor', min: 0.95, max: 1.35, risk: 0.25, desc: 'Malı gemiyle uzaklara yollar, iyi öder. Ama zabıtanın gözü üstünde.' },
+    { id: 'vahan', name: 'Koleksiyoncu Vahan Efendi', short: 'Vahan Efendi', place: 'Cihangir', icon: 'building-castle', min: 1.3, max: 1.6, risk: 0, only: ['antika'], desc: 'Yalnızca antika alır. Gerçek bir parça görünce cüzdanını unutur.' },
+  ],
+  fenceTitle: 'Yatakçılar',
+  fenceInfo: 'Soygunlardan çıkan eşyaları burada paraya çevirirsin. Teklifler her gece değişir; pazarlık edebilirsin ama yatakçı alınırsa o gece o malı almaz.',
+
   // Başarımlar. kind: hangi sayaca bakılır (engine.js achValue), n: hedef, gems: açılınca verilen elmas.
   // Game Center'da her birinin kimliği "kh_" + id olur (App Store Connect'te aynı kimlikle tanımlanmalı).
   achievements: [
@@ -293,6 +342,8 @@ window.ERA = {
     { id: 'set_1', name: 'Koleksiyoncu', desc: 'Bir koleksiyon setini tamamla', icon: 'cards', kind: 'sets', n: 1, gems: 2 },
     { id: 'efsane_1', name: 'Efsanevi iş', desc: 'İlk efsanevi işini başar', icon: 'masks-theater', kind: 'legends', n: 1, gems: 3 },
     { id: 'gunluk_7', name: 'Sadık müdavim', desc: 'Günlük ödülü 7 gün üst üste al', icon: 'calendar-check', kind: 'dailyBest', n: 7, gems: 2 },
+    { id: 'mini_10', name: 'Altın parmaklar', desc: 'Kilit ve kasa açmayı 10 kez kendin başar', icon: 'hand-finger', kind: 'miniWins', n: 10, gems: 2 },
+    { id: 'yatakci_10', name: 'Tüccar ruhlu', desc: 'Yatakçılara 10 eşya sat', icon: 'building-store', kind: 'sold', n: 10, gems: 2 },
     { id: 'yakalandi', name: 'Kodese merhaba', desc: 'İlk kez yakalan. Olur böyle şeyler', icon: 'lock', kind: 'caught', n: 1, gems: 1 },
   ],
   cities: [

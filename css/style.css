@@ -476,3 +476,66 @@ button { font-family: inherit; color: inherit; }
 .game.fit .modal.achm { padding: 14px 16px; }
 .game.fit .achi { padding: 6px 8px; }
 .achbar { background: var(--p2); }
+
+/* Gecenin havası */
+.nightchip { margin-left: auto; display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--ln2); background: var(--p2); color: var(--au); font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.nightchip .ti { font-size: 16px; }
+
+/* Mini oyunlar */
+.choice.minich { border-color: color-mix(in srgb, var(--au) 55%, var(--ln)); background: color-mix(in srgb, var(--au) 8%, var(--bg)); }
+.choice.minich .ct { display: flex; align-items: center; gap: 8px; }
+.mstat { display: flex; justify-content: space-between; align-items: center; margin: 0 2px 10px; }
+.pins { display: flex; gap: 6px; }
+.pin { width: 14px; height: 22px; border-radius: 4px; background: var(--p2); border: 1px solid var(--ln2); transition: background .15s; }
+.pin.on { background: var(--au); border-color: var(--au); }
+.lives { display: flex; gap: 2px; color: var(--no); font-size: 16px; }
+.lives .gone { color: var(--dm); opacity: .5; }
+.mtrack { position: relative; height: 54px; border-radius: 12px; background: var(--bg); border: 1px solid var(--ln2); overflow: hidden; cursor: pointer; touch-action: manipulation; }
+.mtrack .mzone { position: absolute; top: 0; bottom: 0; background: color-mix(in srgb, var(--ok) 35%, transparent); border-left: 2px solid var(--ok); border-right: 2px solid var(--ok); }
+.mtrack .mneedle { position: absolute; top: 4px; bottom: 4px; width: 4px; margin-left: -2px; border-radius: 2px; background: var(--au); box-shadow: 0 0 10px var(--au); }
+.mtrack.hit, .dial.hit { animation: mgok .35s; }
+.mtrack.miss, .dial.miss { animation: mgno .35s; }
+@keyframes mgok { 0% { box-shadow: 0 0 0 3px var(--ok); } 100% { box-shadow: 0 0 0 0 transparent; } }
+@keyframes mgno { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.dial { position: relative; width: 170px; height: 170px; margin: 0 auto; border-radius: 50%; background: radial-gradient(circle, var(--p3) 0 55%, var(--bg) 56%); border: 3px solid var(--ln2); cursor: pointer; touch-action: manipulation; transition: border-color .1s, box-shadow .1s; }
+.dial.click { border-color: var(--au); box-shadow: 0 0 22px color-mix(in srgb, var(--au) 60%, transparent); }
+.dialface { position: absolute; inset: 0; border-radius: 50%; }
+.dialface i { position: absolute; left: 50%; top: 4px; width: 2px; height: 10px; margin-left: -1px; background: var(--mu); transform-origin: 1px 81px; }
+.dialface i.big5 { height: 16px; width: 3px; background: var(--tx); }
+.dialmark { position: absolute; left: 50%; top: -12px; margin-left: -8px; border: 8px solid transparent; border-top: 12px solid var(--au); }
+.dialhub { position: absolute; inset: 50px; border-radius: 50%; background: var(--p1); border: 1px solid var(--ln2); display: flex; align-items: center; justify-content: center; font-size: 28px; color: var(--au); }
+.dial.click .dialhub { color: var(--tx); }
+.mres { margin-top: 10px; font-weight: 700; font-size: 18px; }
+.mres.ok { color: var(--ok); } .mres.no { color: var(--no); }
+.game.fit .modal:has(.dial) h2 { margin-bottom: 0; }
+.game.fit .dial { width: 130px; height: 130px; }
+.game.fit .dialface i { transform-origin: 1px 61px; }
+.game.fit .dialhub { inset: 38px; font-size: 22px; }
+.game.fit .mtrack { height: 46px; }
+
+/* Karaborsa sekmeleri ve yatakçılar */
+.seg { display: inline-flex; gap: 4px; padding: 4px; margin-bottom: 14px; border-radius: 12px; background: var(--bg); border: 1px solid var(--ln); }
+.seg button { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border: 0; border-radius: 9px; background: none; color: var(--mu); font-size: 13px; font-weight: 600; cursor: pointer; }
+.seg button.on { background: var(--p2); color: var(--tx); }
+.seg .cnt { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--au); color: #2a1d00; font-size: 11px; line-height: 18px; text-align: center; }
+.goods { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.item.good .offers { display: flex; flex-direction: column; gap: 6px; }
+.off { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 9px; background: var(--bg); font-size: 13px; }
+.off > .ti { color: var(--au); font-size: 17px; flex: none; }
+.off .fn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.off .risk { color: var(--no); font-size: 11px; display: inline-flex; align-items: center; gap: 2px; }
+.off.na { color: var(--dm); } .off.na > .ti { color: var(--dm); } .off.na em { font-size: 12px; font-style: normal; }
+.off .hg { color: var(--ok); font-size: 11px; display: flex; align-items: center; gap: 2px; }
+.b2.sm { width: auto; margin: 0; padding: 5px 10px; font-size: 12px; }
+.buy.sm { padding: 5px 10px; min-width: 96px; }
+.buy.sm small { font-size: 10px; opacity: .75; margin-left: 2px; }
+.buy.sm.down { background: var(--wa); color: #3a2400; border-bottom-color: #c98a1f; }
+.empty { text-align: center; color: var(--mu); padding: 30px 10px; font-size: 13px; }
+.empty .ti { font-size: 40px; color: var(--dm); }
+.fence { padding: 10px 0; border-top: 1px solid var(--ln); }
+.fence .fh { display: flex; align-items: center; gap: 6px; font-size: 13px; }
+.fence p { font-size: 12px; color: var(--mu); margin: 6px 0; line-height: 1.4; }
+.ftags { display: flex; flex-wrap: wrap; gap: 4px; }
+.tagx { font-size: 10px; padding: 2px 6px; border-radius: 6px; background: var(--bg); color: var(--mu); display: inline-flex; align-items: center; gap: 2px; }
+.tagx.no { color: var(--no); } .tagx.ok { color: var(--ok); } .tagx.au { color: var(--au); }
+.lvup.goodline { background: color-mix(in srgb, var(--wa) 14%, var(--bg)); }
