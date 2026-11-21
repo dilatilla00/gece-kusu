@@ -2,7 +2,7 @@
 (function () {
   const G = window.Game, E = G.E;
   const $ui = document.getElementById('ui'), $layer = document.getElementById('layer');
-  const ui = { screen: 'hedef', tier: E.tiers[0].id, sel: null, modal: G.s.stats.robs === 0 && !(G.s.seen || {}).intro ? { type: 'intro' } : null };
+  const ui = { screen: 'hedef', tier: E.tiers[0].id, sel: null, modal: null }; // yeni oyunculara karşılama penceresi yerine başlangıç turu (tutorial.js) gösterilir
 
   const fmt = n => Math.round(n).toLocaleString('tr-TR');
   const mmss = s => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
@@ -19,6 +19,14 @@
     if ((r.broken || []).length) snd('break', 0.7);
     if (r.levelUps) snd('levelup', r.legend ? 1.8 : 1.0);
   }
+  // Tek seferlik ipuçları: oyuncu "Anladım" der ya da ekrandan/pencereden ayrılınca bir daha görünmez.
+  const tipsShown = new Set();
+  function tip(key, text) {
+    if ((G.s.seen || {})['tip_' + key]) return '';
+    tipsShown.add(key);
+    return `<div class="tip">${ic('bulb', 'au')}<span>${text}</span><button class="tipx" data-tip="${key}">Anladım</button></div>`;
+  }
+  function markTips() { tipsShown.forEach(k => G.markSeen('tip_' + k)); tipsShown.clear(); }
   const shopOn = () => window.Shop && Shop.enabled();
   const diff = p => p >= 70 ? ['Kolay', 'ok', '#3ccf8e22'] : p >= 45 ? ['Orta', 'wa', '#ffb54722'] : ['Zor', 'no', '#ff6b5b22'];
 
@@ -60,7 +68,7 @@
     const info = `<div class="row" style="margin-top:8px"><span class="mini">${ic('target')}Şu anki şans</span><b style="font-weight:500;color:var(--${diff(st.p)[1]})">%${st.p}</b></div>`
       + (last ? `<div class="lastev">${ic(last.roll ? (last.ok ? 'circle-check' : 'alert-triangle') : 'point', last.roll ? (last.ok ? 'ok' : 'no') : 'mu')}<span><b>${last.title}:</b> ${last.text}</span></div>` : '');
     if (st.pending) return [`<div class="heist">${rows}${info}</div>`, `<button class="b1" data-act="openevent">${ic('alert-triangle')} Karar bekliyor</button>`];
-    return [`<div class="heist">${rows}<p class="ptext">${cur.text}</p>${info}</div>`,
+    return [tip('heist', 'Soygun sürerken başka ekranlara bakabilir, hatta oyundan çıkabilirsin; iş devam eder. Acelen varsa elmasla hızlandırabilirsin.') + `<div class="heist">${rows}<p class="ptext">${cur.text}</p>${info}</div>`,
       adBtn('rush', 'İzle, hemen ilerle') + `<button class="b2 ${G.s.gems < c ? 'off' : ''}" ${G.s.gems >= c ? 'data-act="rush"' : ''} style="margin:0">${ic('bolt', 'gem')}Hızlandır · <span data-hrush>${c}</span> ${E.gemName} <span class="mini" style="margin-left:6px">kalan <span data-htotal>${mmss(st.totalLeft)}</span></span></button>`];
   }
 
@@ -190,6 +198,7 @@
   }
   function scrYetenek() {
     return `<div class="page scroll"><div class="page-h"><div><h1>Yetenekler</h1><p>Her seviyede bir puan kazanırsın. Yetenekler şansını artırır, bazıları yeni hedef kademelerini açar.</p></div><div class="sp-chip">Harcanabilir puan: <b>${G.s.sp}</b></div></div>
+      ${tip('yetenek', `Her seviye atlayışında 1 yetenek puanı kazanırsın. Kasa kulağı dükkânları, Kılık değiştirme mağazaları, Sahte kimlik müzeleri açar. Seviye ${E.mastery ? E.mastery.lv : 8}'de sınırsız gelişen Ustalık açılır.`)}
       <div class="branches">${E.branches.map(b => `<div><div class="branch-h">${ic(b.icon)}${b.name}</div>${E.skills.filter(s => s.branch === b.id).map(node).join('')}</div>`).join('')}</div>
       ${E.mastery ? masteryBlock() : ''}</div>`;
   }
@@ -210,6 +219,7 @@
   function scrAlet() {
     const S = G.s;
     return `<div class="page scroll"><div class="page-h"><div><h1>Aletler</h1><p>Aletlerini her işte yanında taşırsın.</p></div><div class="sp-chip">${ic('coins', 'au')} <b>${fmt(S.money)}</b> ${E.currency}</div></div>
+      ${tip('alet', 'Aletler hedeflerin engellerini kaldırır ya da şansını artırır. Hangi engeli kaldırdığı açıklamasında yazar; hedefin sağ panelinde de görürsün.')}
       <p class="mini" style="white-space:normal;margin:-6px 0 14px">${ic('info-circle')}Aletler bir işte işe yararsa yıpranır; bazen kırılır. Kırılan aleti buradan yeniden alabilirsin.</p>
       <div class="shop">${E.tools.map(t => {
         const own = S.tools.includes(t.id);
@@ -226,7 +236,7 @@
     const S = G.s, st = S.stats;
     const feed = S.news.map((n, i) => `<article class="news ${i === 0 ? 'lead' : ''}"><div class="d">${G.dateOf(n.day).toUpperCase()}</div><h3>${n.h}</h3><p>${n.b}</p></article>`).join('');
     const canBribe = S.heat > 0 && S.gems >= E.bribeCost;
-    return `<div class="paper"><div class="feed scroll"><div class="mast"><h1>${E.labels.newspaper}</h1><span>${G.dateOf(S.day)}</span></div>${feed}</div>
+    return `<div class="paper"><div class="feed scroll"><div class="mast"><h1>${E.labels.newspaper}</h1><span>${G.dateOf(S.day)}</span></div>${tip('gazete', 'Yaptığın her iş ertesi sabah gazetede çıkar. Sağdaki bölümde zabıta takibini görürsün: dinlenerek ya da komisere rüşvet vererek azaltabilirsin. Ayrıca kariyer istatistiklerin burada.')}${feed}</div>
       <aside class="side scroll">
         <h4>${G.heatLabel().toLocaleUpperCase('tr-TR')}</h4>
         <div class="heat">${[0, 1, 2, 3, 4].map(i => `<i class="${i < S.heat ? 'on' : ''}"></i>`).join('')}</div>
@@ -262,6 +272,7 @@
       : `<div class="offer empty">${ic('moon')}<span>Bu gece kaçakçıda efsanevi bir şey yok. Her gece yeniden bak.</span></div>`;
     const done = Object.keys(S.setsDone || {}).length;
     return `<div class="page scroll"><div class="page-h"><div><h1>${C.title}</h1><p>${C.info}</p></div><div class="sp-chip">Tamamlanan set: <b>${done}/${C.sets.length}</b></div></div>
+      ${tip('koleksiyon', 'Efsanevi eşyaları topla. Bazıları büyük soygunlardan çıkar, bazılarını kaçakçı bazı geceler satar. Bir seti tamamlayınca kalıcı bir güç kazanırsın.')}
       ${offerBox}<div class="shop" style="margin-top:14px">${sets}</div></div>`;
   }
 
@@ -284,6 +295,7 @@
     }).join('');
     const buffs = G.activeBuffs();
     return `<div class="paper"><div class="feed scroll"><div class="page-h" style="margin-bottom:14px"><div><h1 style="font-size:20px;font-weight:500;margin:0">${M.title}</h1><p>${M.info}</p></div></div>
+      ${tip('karaborsa', 'Buradaki mallar bir sonraki işin için hazırlanır: şans, ganimet ya da güvenli kaçış verir. Mallar her gece değişir; bazen indirimli bir fırsat çıkar.')}
       <h3 class="sec">Bu geceki mallar</h3><div class="shop">${wares}</div></div>
       <aside class="side scroll">
         <p class="rumor">“${mk.rumor}”</p><div class="mini" style="margin:-4px 0 18px">— ${M.rumorBy}</div>
@@ -333,6 +345,7 @@
     const list = E.crew.slice().sort((a, b) => order[G.crewState(a)] - order[G.crewState(b)] || a.lv - b.lv);
     return `<div class="page scroll"><div class="page-h"><div><h1>Ekip</h1><p>${E.labels.crewInfo}</p></div>
       <div style="display:flex;gap:8px"><div class="sp-chip">Yer: <b>${G.crewCount()}/${G.crewSlots()}</b></div><div class="sp-chip">Ekip payı: <b>%${Math.round(G.crewCut() * 100)}</b></div></div></div>
+      ${tip('ekip', 'Ekip üyeleri işini kolaylaştırır ama her başarılı işte ganimetten pay alır. Onları eğiterek güçlendirebilirsin. Seviye atladıkça ekibe daha çok kişi alabilirsin.')}
       <div class="slots">${slotRow}</div>
       <h3 class="sec">Şehirdeki adamlar</h3>
       <div class="shop">${list.map(crewCard).join('')}</div></div>`;
@@ -381,6 +394,11 @@
         ${(r.usedUp || []).length ? `<div class="mini" style="justify-content:center;margin:-6px 0 12px;white-space:normal">${ic('tool')}Bitti: ${r.usedUp.map(x => x.name).join(', ')}</div>` : ''}
         ${(r.broken || []).map(x => `<div class="lvup broke">${ic('hammer')} ${x.name} kırıldı! Aletler'den yenisini alabilirsin.</div>`).join('')}
         ${r.log && r.log.length ? `<div class="evlog"><div class="src">GECENİN OLAYLARI</div>${r.log.map(l => `<div class="fr">${ic(l.roll ? (l.ok ? 'circle-check' : 'alert-triangle') : 'point', l.roll ? (l.ok ? 'ok' : 'no') : 'mu')}<span><b>${l.title}:</b> ${l.choice}</span></div>`).join('')}</div>` : ''}
+        ${r.levelUps ? tip('levelup', 'Seviye atladın! Yetenek puanını Yetenekler ekranında harca. Yeni seviyeler yeni hedefler de açar.')
+          : r.caught ? tip('caught', 'Takip 5 iken bir kez daha fark edilince yakalanırsın. Bunu önlemek için takip yükselince dinlen ya da rüşvet ver.')
+          : r.heatUp ? tip('heat', 'Zabıta takibin arttı. Takip yükseldikçe her işte şansın düşer. Gazete ekranından dinlenerek ya da rüşvetle azaltabilirsin.')
+          : (r.broken || []).length ? tip('broken', 'Aletler işe yaradıkları işlerde yıpranır ve bazen kırılır. Aletler ekranından yenisini alabilirsin.')
+          : r.ok ? tip('result', 'Aynı yeri tekrar soyarsan orası daha korunaklı olur: şansın düşer ama ganimet büyür. Soyulan yerler birkaç gece dinlenir.') : ''}
         ${r.news ? `<div class="clip"><div class="src">ERTESİ SABAH · ${E.labels.newspaper.toUpperCase()}</div><div class="h">${r.news.h}</div><div class="b">${r.news.b}</div></div>` : ''}
         ${adBtn('double', `Ganimeti ikiye katla · +${fmt(r.loot || 0)} ${E.currency}`, r)}
         <div class="btn-row">${r.levelUps ? `<button class="b2" data-go="yetenek">Yeteneklere git</button>` : ''}<button class="b1" data-act="close">Devam</button></div>`;
@@ -394,6 +412,7 @@
       inner = `<div class="big" style="background:var(--wa);color:#3a2400">${ic(ev.icon)}</div>
         <div class="mini" style="justify-content:center;margin-bottom:4px">${t.name} · ${E.heist.phases[Math.min(st.phase, 2)].name}</div>
         <h2>${ev.title}</h2><p class="evtext">${ev.text}</p>
+        ${tip('event', 'Ne yapacağına sen karar verirsin. Yanında yüzde yazan seçenekler risklidir: tutarsa iyi kazandırır, tutmazsa şansını düşürür. Bazı seçenekler için ekip, yetenek ya da alet gerekir.')}
         <div class="mini" style="justify-content:center;margin-bottom:14px">${ic('target')}Şu anki başarı şansın <b style="color:var(--tx);font-weight:500">%${st.p}</b></div>
         <div class="choices">${ev.choices.map((c, i) => {
           const open = G.choiceOpen(c), hc = hintCol[c.hint] || 'mu';
@@ -526,11 +545,13 @@
   }
 
   $ui.addEventListener('click', e => {
-    const el = e.target.closest('[data-gempack],[data-ad],[data-go],[data-tier],[data-sel],[data-act],[data-learn],[data-buy],[data-hire],[data-train],[data-dismiss],[data-mbuy],[data-choice],[data-mastery],[data-city]');
+    const el = e.target.closest('[data-tip],[data-gempack],[data-ad],[data-go],[data-tier],[data-sel],[data-act],[data-learn],[data-buy],[data-hire],[data-train],[data-dismiss],[data-mbuy],[data-choice],[data-mastery],[data-city]');
     if (!el) return;
     const d = el.dataset;
     if (window.Sound) Sound.unlock();
     if (!d.choice) snd('tap');
+    if (d.tip) { G.markSeen('tip_' + d.tip); tipsShown.delete(d.tip); render(); return; }
+    if (d.go || d.choice || d.act === 'close') markTips();
     if (d.ad) { watchAd(d.ad); return; }
     if (d.gempack) { buyPack(+d.gempack); return; }
     if (d.go) { ui.screen = d.go; ui.modal = null; }
@@ -578,7 +599,7 @@
         case 'togglemusic': if (window.Sound) Sound.music = !Sound.music; break;
         case 'shop': ui.modal = { type: 'shop' }; break;
         case 'askreset': ui.modal = { type: 'reset' }; break;
-        case 'reset': G.reset(); Object.assign(ui, { screen: 'hedef', tier: E.tiers[0].id, sel: null, modal: { type: 'intro' } }); break;
+        case 'reset': G.reset(); Object.assign(ui, { screen: 'hedef', tier: E.tiers[0].id, sel: null, modal: null }); setTimeout(() => window.Tour && Tour.maybeStart(), 300); break;
         case 'dismiss': if (ui.modal && G.dismiss(ui.modal.id)) toast(`${ic('user-minus')}${G.crewById[ui.modal.id].name} ekipten ayrıldı`); ui.modal = null; break;
         case 'close': if (ui.modal && ui.modal.type === 'intro') G.markSeen('intro'); ui.modal = null; break;
       }
@@ -604,6 +625,12 @@
     $ui.querySelectorAll('[data-hbar]').forEach(e => { e.style.width = Math.round(st.phaseProg * 100) + '%'; });
     $ui.querySelectorAll('[data-hrush]').forEach(e => { e.textContent = G.rushCost(); });
   }, 500);
+
+  // Başlangıç turu için küçük arayüz bağlantısı
+  window.UI = {
+    home() { Object.assign(ui, { screen: 'hedef', tier: E.tiers[0].id, sel: null, modal: null }); render(); },
+    get busy() { return !!ui.modal; },
+  };
 
   document.title = E.title;
   render();

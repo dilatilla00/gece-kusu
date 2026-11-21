@@ -57,6 +57,6 @@
     e.stopPropagation();
     if (window.Sound) { Sound.unlock(); Sound.play('unlock'); }
     $s.classList.add('out');
-    setTimeout(() => $s.remove(), 600);
+    setTimeout(() => { $s.remove(); document.dispatchEvent(new Event('gk:start')); }, 600);
   });
 })();
