@@ -177,6 +177,36 @@
     return r;
   }
 
+  // Günlük giriş ödülü: gerçek takvim gününe göre. Art arda gelinen günlerde ödül büyür (7 günlük döngü);
+  // bir gün kaçarsa seri baştan başlar. Para ödülü oyuncunun açabildiği en zengin hedefe göre ölçeklenir.
+  const DAILY = (E.daily && E.daily.cycle) || [{ money: 0.6 }, { money: 0.8 }, { gems: 1 }, { money: 1 }, { money: 1.2, gems: 1 }, { money: 1.5 }, { money: 2, gems: 3 }];
+  const dayKey = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const nice = n => { if (n < 100) return Math.max(10, Math.round(n / 5) * 5); const p = Math.pow(10, Math.floor(Math.log10(n)) - 1); return Math.round(n / p) * p; };
+  function dailyBase() {
+    let best = 40;
+    E.targets.forEach(t => { if (targetOpen(t)) best = Math.max(best, (t.loot[0] + t.loot[1]) / 2); });
+    return best;
+  }
+  function dailyState(now = new Date()) {
+    const d = S.daily || { last: null, n: 0 }, today = dayKey(now);
+    const y = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    const ready = d.last !== today;
+    const cont = d.last === today || d.last === dayKey(y); // seri sürüyor mu
+    const n = cont ? d.n : 0;                              // bugüne kadar art arda alınan gün
+    const idx = ready ? n % DAILY.length : (n - 1) % DAILY.length; // bugünün (ya da alınmış olanın) sırası
+    const base = dailyBase();
+    const rewards = DAILY.map(r => ({ money: r.money ? nice(base * r.money) : 0, gems: r.gems || 0 }));
+    return { ready, idx, streak: n, rewards, reward: rewards[idx] };
+  }
+  function claimDaily(now = new Date()) {
+    const st = dailyState(now);
+    if (!st.ready) return null;
+    S.money += st.reward.money; S.gems += st.reward.gems;
+    S.daily = { last: dayKey(now), n: st.streak + 1 };
+    save();
+    return { ...st.reward, day: st.idx + 1, streak: st.streak + 1 };
+  }
+
   function levelUps() {
     let n = 0;
     while (S.xp >= xpCap(S.lv)) { S.xp -= xpCap(S.lv); S.lv++; S.sp++; S.gems++; n++; }
@@ -573,7 +603,7 @@
     market, marketState, buyMarket, gemRates, sellGem, buyGem, activeBuffs, immediate,
     crewSlots, crewCount, crewCut, crewState, trainCost, hire, train, dismiss,
     xpCap, tierOpen, targetOpen, cooldownLeft, scoutCost, requirements, odds, dateOf,
-    quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest, canAd, adReward, addGems,
+    dailyState, claimDaily, quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest, canAd, adReward, addGems,
     pickPattern, rob, startHeist, heistStatus, finishHeist, rushCost, rush, heistTimes, baseTimes, choose, choiceChance, choicePenalty, choiceOpen, reqText, rushTarget,
     scout, rest, bribe, learn, buy, reset, markSeen,
   };

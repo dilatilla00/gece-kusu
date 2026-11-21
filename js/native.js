@@ -51,7 +51,7 @@
   // Soygun bir olayda durur ya da biter. Bir sonraki durma anı için tek bir bildirim planlanır;
   // soygun hızlandırılınca, olay seçilince ya da iş bitince plan kendiliğinden güncellenir.
   const nb = bridge('notify');
-  let nOn = getPref('gk_notify', true), status = 'unknown', last = null;
+  let nOn = getPref('gk_notify', true), status = 'unknown';
 
   function plan() {
     const h = G.s.heist;
@@ -66,22 +66,35 @@
     }
     return { at: h.start + st.total * 1000, title: `${t.name} işi bitti`, body: 'Ganimet seni bekliyor. Sonucu görmek için dokun.' };
   }
+  // Günlük ödül hatırlatması: ödül alındıysa ertesi gün akşam 19:00'da.
+  function dailyPlan() {
+    if (!G.dailyState) return null;
+    const d = G.dailyState();
+    if (d.ready) return null; // bugünkü alınmadı: oyun açılınca zaten gösterilecek
+    const now = new Date(), at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 19, 0, 0).getTime();
+    const nextDay = d.streak % d.rewards.length + 1;
+    return { at, title: 'Günlük ödülün hazır', body: nextDay === d.rewards.length ? '7. günün büyük ödülü seni bekliyor. Seriyi bozma!' : `${nextDay}. gün ödülünü almayı unutma. Seriyi bozma!` };
+  }
+  const lastBy = {};
+  function post(id, p) {
+    const key = p ? Math.round(p.at / 1000) + '|' + p.title + '|' + p.body : '';
+    if (key === lastBy[id]) return;
+    lastBy[id] = key;
+    nb.postMessage(p ? { op: 'set', id, at: p.at, title: p.title, body: p.body } : { op: 'clear', id });
+  }
   function sync() {
     if (!nb) return;
-    const p = nOn ? plan() : null;
-    const key = p ? Math.round(p.at / 1000) + '|' + p.title : '';
-    if (key === last) return;
-    last = key;
-    nb.postMessage(p ? { op: 'set', id: 'heist', at: p.at, title: p.title, body: p.body } : { op: 'clear', id: 'heist' });
+    post('heist', nOn ? plan() : null);
+    post('daily', nOn ? dailyPlan() : null);
   }
 
   const Notify = {
     get supported() { return !!nb; },
     get on() { return nOn; },
-    set on(v) { nOn = !!v; setPref('gk_notify', nOn); last = null; sync(); },
+    set on(v) { nOn = !!v; setPref('gk_notify', nOn); sync(); },
     get status() { return status; },
     _status(s) { const ch = s !== status; status = s; if (ch && window.UI && UI.refresh) UI.refresh(); },
-    sync, plan,
+    sync, plan, dailyPlan,
   };
   window.Notify = Notify;
   if (nb) { nb.postMessage({ op: 'status' }); setInterval(sync, 1000); }

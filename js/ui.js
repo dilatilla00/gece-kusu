@@ -460,6 +460,15 @@
           : `<button class="b2 ${skip ? '' : 'off'}" ${skip ? 'data-act="skipquest"' : ''}>${ic('refresh')}Başka görev</button><button class="b1" data-act="close">Tamam</button>`}</div>
         ${done ? '' : adBtn('skip', 'Bir kez daha görev değiştir')}`;
     }
+    if (m.type === 'daily') {
+      const d = G.dailyState();
+      const val = r => `${r.money ? `<span class="dv">${ic('coins', 'au')}${fmt(r.money)}</span>` : ''}${r.gems ? `<span class="dv">${ic('diamond', 'gem')}${r.gems}</span>` : ''}`;
+      inner = `<div class="big" style="background:var(--au);color:#2a1d00">${ic('calendar-star')}</div><h2>Günlük ödül</h2>
+        <p>${d.streak ? `<b style="color:var(--au)">${d.streak + 1} gündür</b> üst üste geliyorsun.` : 'Her gün uğra, ödüller büyüsün.'} Bir gün kaçırırsan seri baştan başlar.</p>
+        <div class="days">${d.rewards.map((r, i) => `<div class="dday ${i < d.idx ? 'got' : i === d.idx ? 'now' : ''} ${i === d.rewards.length - 1 ? 'last' : ''}">
+          <span class="dn">${i + 1}. gün</span>${i < d.idx ? `<span class="dok">${ic('check')}</span>` : val(r)}</div>`).join('')}</div>
+        <button class="b1" data-act="claimdaily">${ic('gift')}Ödülü al</button>`;
+    }
     if (m.type === 'shop') {
       const S = G.s, packs = Shop.packs;
       inner = `<div class="big" style="background:var(--gem);color:#0d1630">${ic('diamond')}</div><h2>${E.gemName[0].toLocaleUpperCase('tr-TR') + E.gemName.slice(1)} al</h2>
@@ -493,7 +502,7 @@
       inner = `<div class="big" style="background:var(--no);color:#0d1630">${ic('alert-triangle')}</div><h2>Emin misin?</h2><p>Bütün ilerlemen silinecek ve oyun baştan başlayacak.</p>
         <div class="btn-row"><button class="b2" data-act="close">Vazgeç</button><button class="b1" data-act="reset">Sıfırla</button></div>`;
     }
-    return `<div class="veil"><div class="modal" role="dialog" aria-modal="true">${inner}</div></div>`;
+    return `<div class="veil"><div class="modal ${m.type === 'daily' ? 'wide' : ''}" role="dialog" aria-modal="true">${inner}</div></div>`;
   }
 
   function toast(html) {
@@ -595,6 +604,12 @@
         case 'bribe': if (G.bribe() && (snd('coin'), true)) toast(`${ic('diamond', 'gem')}Komiser bu sefer görmezden geldi`); break;
         case 'quest': ui.modal = { type: 'quest' }; break;
         case 'skipquest': if (G.skipQuest()) { ui.modal = null; toast(`${ic('refresh', 'au')}Yeni görev: ${G.quest().text}`); } break;
+        case 'claimdaily': {
+          if (ui.modal && ui.modal.type === 'daily') ui.modal = null;
+          const r = G.claimDaily();
+          if (r) { snd('reward'); toast(`${ic('calendar-star', 'au')}${r.day}. gün ödülü:${r.money ? ` +${fmt(r.money)} ${E.currency}` : ''}${r.money && r.gems ? ',' : ''}${r.gems ? ` +${r.gems} ${E.gemName}` : ''}`); if (window.Notify) Notify.sync(); }
+          break;
+        }
         case 'claim': { if (ui.modal && ui.modal.type === 'quest') ui.modal = null; const r = G.claimQuest(); if (r && (snd('reward'), true)) toast(`${ic('gift', 'au')}Görev ödülü: +${fmt(r.money)} ${E.currency}, +${r.gems} ${E.gemName}`); break; }
         case 'sellgem': if (G.sellGem() && (snd('coin'), true)) toast(`${ic('diamond', 'gem')}Bir elmas bozuldu`); break;
         case 'buygem': if (G.buyGem() && (snd('gem'), true)) toast(`${ic('diamond', 'gem')}Bir elmas alındı`); break;
@@ -617,6 +632,9 @@
   let lastPhase = null, lastAfford = null;
   setInterval(() => {
     const st = G.heistStatus();
+    if (!ui.modal && !(st && (st.pending || st.done)) && !document.getElementById('splash') && !(window.Tour && Tour.active) && G.dailyState().ready) {
+      ui.modal = { type: 'daily' }; snd('gem'); render();
+    }
     if (window.Sound) { Sound.heist(!!st && !st.done); Sound.ambience(st && !st.pending && !st.done ? st.phase : null); }
     if (!st) { lastPhase = null; return; }
     if (st.done) {
