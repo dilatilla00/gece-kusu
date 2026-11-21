@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import UserNotifications
 
 /// Oyunu uygulamanın içindeki "Web" klasöründen, internet gerekmeden açar.
 struct GameView: UIViewRepresentable {
@@ -14,12 +15,15 @@ struct GameView: UIViewRepresentable {
         // Oyundaki JavaScript hatalarını Xcode konsoluna yaz.
         config.userContentController.add(context.coordinator, name: "log")
         config.userContentController.add(context.coordinator, name: "ready")
+        config.userContentController.add(context.coordinator, name: "notify")
+        config.userContentController.add(context.coordinator, name: "haptic")
         config.userContentController.addUserScript(WKUserScript(source: """
             window.addEventListener('error', e => webkit.messageHandlers.log.postMessage('JS hata: ' + e.message + ' @ ' + e.filename + ':' + e.lineno));
             window.addEventListener('unhandledrejection', e => webkit.messageHandlers.log.postMessage('JS hata: ' + e.reason));
             """, injectionTime: .atDocumentStart, forMainFrameOnly: true))
 
         let web = WKWebView(frame: .zero, configuration: config)
+        context.coordinator.web = web
         web.navigationDelegate = context.coordinator
         #if DEBUG
         if #available(iOS 16.4, *) { web.isInspectable = true }
@@ -43,10 +47,22 @@ struct GameView: UIViewRepresentable {
 
     final class Coordinator: NSObject, WKScriptMessageHandler, WKNavigationDelegate {
         let loaded: Binding<Bool>
+        weak var web: WKWebView?
         init(loaded: Binding<Bool>) { self.loaded = loaded }
 
         func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
-            if message.name == "ready" { loaded.wrappedValue = true; return } // açılış ekranı çizildi
+            switch message.name {
+            case "ready": loaded.wrappedValue = true; return // açılış ekranı çizildi
+            case "haptic": Haptics.play(message.body as? String ?? "light"); return
+            case "notify":
+                if let m = message.body as? [String: Any] {
+                    Notifier.shared.handle(m) { [weak self] status in
+                        self?.web?.evaluateJavaScript("window.Notify && Notify._status('\(status)')")
+                    }
+                }
+                return
+            default: break
+            }
             NSLog("[KibarHirsiz] %@", String(describing: message.body))
         }
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -109,5 +125,77 @@ final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
         case "ttf": return "font/ttf"
         default: return "application/octet-stream"
         }
+    }
+}
+
+/// Oyundaki olaylara göre telefonun titreşim motorunu çalıştırır.
+enum Haptics {
+    static func play(_ kind: String) {
+        switch kind {
+        case "selection": UISelectionFeedbackGenerator().selectionChanged()
+        case "success": UINotificationFeedbackGenerator().notificationOccurred(.success)
+        case "warning": UINotificationFeedbackGenerator().notificationOccurred(.warning)
+        case "error": UINotificationFeedbackGenerator().notificationOccurred(.error)
+        case "medium": UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        case "heavy": UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+        case "rigid": UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        case "soft": UIImpactFeedbackGenerator(style: .soft).impactOccurred()
+        default: UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
+    }
+}
+
+/// Soygun bitince ya da soygunda bir olay çıkınca, oyuncu uygulamada değilse yerel bildirim gösterir.
+/// İnternet ya da sunucu gerekmez; bildirim telefonda planlanır.
+final class Notifier: NSObject, UNUserNotificationCenterDelegate {
+    static let shared = Notifier()
+    private let center = UNUserNotificationCenter.current()
+
+    /// Uygulama açıldığında çağrılır: ön planda bildirim gösterme, eski bildirimleri temizle.
+    func activate() {
+        center.delegate = self
+        NotificationCenter.default.addObserver(forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main) { [weak self] _ in
+            self?.center.removeAllDeliveredNotifications()
+        }
+    }
+
+    /// JS'ten gelen istek: {op: "set", id, at (ms), title, body} ya da {op: "clear", id} / {op: "status"}
+    func handle(_ m: [String: Any], status: @escaping (String) -> Void) {
+        let op = m["op"] as? String ?? ""
+        let id = m["id"] as? String ?? "heist"
+        if op == "clear" { center.removePendingNotificationRequests(withIdentifiers: [id]); return }
+        if op == "status" {
+            center.getNotificationSettings { s in DispatchQueue.main.async { status(Self.name(s.authorizationStatus)) } }
+            return
+        }
+        guard op == "set", let at = m["at"] as? Double else { return }
+        let title = m["title"] as? String ?? "", body = m["body"] as? String ?? ""
+        // İzin ilk kez burada istenir (ilk soygun başlayınca); sonraki çağrılarda soru tekrar çıkmaz.
+        center.requestAuthorization(options: [.alert, .sound]) { [weak self] granted, _ in
+            guard let self else { return }
+            DispatchQueue.main.async { status(granted ? "granted" : "denied") }
+            guard granted else { return }
+            let c = UNMutableNotificationContent()
+            c.title = title; c.body = body; c.sound = .default
+            let secs = max(1, at / 1000 - Date().timeIntervalSince1970)
+            let req = UNNotificationRequest(identifier: id, content: c,
+                                            trigger: UNTimeIntervalNotificationTrigger(timeInterval: secs, repeats: false))
+            self.center.removePendingNotificationRequests(withIdentifiers: [id])
+            self.center.add(req)
+        }
+    }
+
+    private static func name(_ s: UNAuthorizationStatus) -> String {
+        switch s {
+        case .authorized, .provisional, .ephemeral: return "granted"
+        case .denied: return "denied"
+        default: return "unknown"
+        }
+    }
+
+    // Oyuncu zaten oyundaysa bildirim kutusu çıkmasın; oyun kendi sesini ve ekranını gösterir.
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+                                withCompletionHandler done: @escaping (UNNotificationPresentationOptions) -> Void) {
+        done([])
     }
 }

@@ -10,6 +10,7 @@ struct KibarHirsizApp: App {
         // Oyun sesleri telefonun sessiz düğmesine uysun ve çalan başka müziği kesmesin.
         try? AVAudioSession.sharedInstance().setCategory(.ambient, options: [.mixWithOthers])
         try? AVAudioSession.sharedInstance().setActive(true)
+        Notifier.shared.activate()
     }
 
     var body: some Scene {

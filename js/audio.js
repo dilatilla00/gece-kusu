@@ -273,8 +273,10 @@ window.Sound = (function () {
     break(t) { noise(t, 0.08, { type: 'highpass', f: 1500, vol: 0.4 }); noise(t + 0.03, 0.2, { type: 'lowpass', f: 900, vol: 0.3 }); tone(180, t, 0.15, { type: 'square', vol: 0.06, slide: 0.5 }); },
   };
 
-  function play(name, delay = 0) {
+  // quiet: ortam sesleri gibi titreşim istemeyen sesler
+  function play(name, delay = 0, quiet = false) {
     if (api.onplay) api.onplay(name); // testler için
+    if (!quiet && window.Haptic) Haptic.sound(name, delay); // ses kapalı olsa da titreşim çalışır
     if (!sfxOn || !ctx || ctx.state !== 'running' || !FX[name]) return;
     try { FX[name](now() + 0.01 + delay); } catch (e) { /* ses hatası oyunu durdurmasın */ }
   }
@@ -289,7 +291,7 @@ window.Sound = (function () {
     const loop = () => {
       if (amb !== ph) return;
       const list = AMB[ph];
-      play(list[Math.floor(Math.random() * list.length)]);
+      play(list[Math.floor(Math.random() * list.length)], 0, true);
       ambTimer = setTimeout(loop, ph === 2 ? rnd(1400, 2200) : rnd(1600, 3200));
     };
     ambTimer = setTimeout(loop, 500);

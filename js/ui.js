@@ -478,6 +478,10 @@
       inner = `<h2>Ayarlar</h2><p>${E.title} · ${G.dateOf(G.s.day)}</p>
         ${so ? `<button class="b2 tgl ${so.sfx ? 'on' : ''}" data-act="togglesfx">${ic(so.sfx ? 'volume' : 'volume-off')}Ses efektleri<span class="sw">${so.sfx ? 'Açık' : 'Kapalı'}</span></button>
         <button class="b2 tgl ${so.music ? 'on' : ''}" data-act="togglemusic">${ic(so.music ? 'music' : 'music-off')}Müzik<span class="sw">${so.music ? 'Açık' : 'Kapalı'}</span></button>` : ''}
+        ${window.Haptic && Haptic.supported ? `<button class="b2 tgl ${Haptic.on ? 'on' : ''}" data-act="togglehaptic">${ic(Haptic.on ? 'device-mobile-vibration' : 'device-mobile')}Titreşim<span class="sw">${Haptic.on ? 'Açık' : 'Kapalı'}</span></button>` : ''}
+        ${window.Notify && Notify.supported ? (Notify.status === 'denied'
+          ? `<button class="b2 tgl" disabled>${ic('bell-off')}Bildirimler<span class="sw">iPhone ayarlarından kapalı</span></button>`
+          : `<button class="b2 tgl ${Notify.on ? 'on' : ''}" data-act="togglenotify">${ic(Notify.on ? 'bell-ringing' : 'bell-off')}Soygun bildirimleri<span class="sw">${Notify.on ? 'Açık' : 'Kapalı'}</span></button>`) : ''}
         <button class="b2" data-act="askreset">${ic('refresh')}Yeni oyun başlat</button><button class="b1" data-act="close">Kapat</button>`;
     }
     if (m.type === 'dismiss') {
@@ -597,6 +601,8 @@
         case 'menu': ui.modal = { type: 'menu' }; break;
         case 'togglesfx': if (window.Sound) { Sound.sfx = !Sound.sfx; snd('tap'); } break;
         case 'togglemusic': if (window.Sound) Sound.music = !Sound.music; break;
+        case 'togglehaptic': if (window.Haptic) Haptic.on = !Haptic.on; break;
+        case 'togglenotify': if (window.Notify) { Notify.on = !Notify.on; snd('tap'); } break;
         case 'shop': ui.modal = { type: 'shop' }; break;
         case 'askreset': ui.modal = { type: 'reset' }; break;
         case 'reset': G.reset(); Object.assign(ui, { screen: 'hedef', tier: E.tiers[0].id, sel: null, modal: null }); setTimeout(() => window.Tour && Tour.maybeStart(), 300); break;
@@ -630,6 +636,7 @@
   window.UI = {
     home() { Object.assign(ui, { screen: 'hedef', tier: E.tiers[0].id, sel: null, modal: null }); render(); },
     get busy() { return !!ui.modal; },
+    refresh() { render(); },
   };
 
   document.title = E.title;
