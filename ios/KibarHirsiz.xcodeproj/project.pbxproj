@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A10000000000000000000001 /* GeceKusuApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* GeceKusuApp.swift */; };
+		A10000000000000000000001 /* KibarHirsizApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* KibarHirsizApp.swift */; };
 		A10000000000000000000002 /* GameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* GameView.swift */; };
 		A10000000000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* Assets.xcassets */; };
 		A10000000000000000000004 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* PrivacyInfo.xcprivacy */; };
@@ -15,13 +15,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		A20000000000000000000001 /* GeceKusuApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeceKusuApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000001 /* KibarHirsizApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KibarHirsizApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* GameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameView.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A20000000000000000000004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A20000000000000000000005 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A20000000000000000000006 /* Web */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Web; sourceTree = "<group>"; };
-		A20000000000000000000007 /* GeceKusu.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GeceKusu.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A20000000000000000000007 /* KibarHirsiz.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KibarHirsiz.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -38,28 +38,28 @@
 		A40000000000000000000001 = {
 			isa = PBXGroup;
 			children = (
-				A40000000000000000000002 /* GeceKusu */,
+				A40000000000000000000002 /* KibarHirsiz */,
 				A40000000000000000000003 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
-		A40000000000000000000002 /* GeceKusu */ = {
+		A40000000000000000000002 /* KibarHirsiz */ = {
 			isa = PBXGroup;
 			children = (
-				A20000000000000000000001 /* GeceKusuApp.swift */,
+				A20000000000000000000001 /* KibarHirsizApp.swift */,
 				A20000000000000000000002 /* GameView.swift */,
 				A20000000000000000000003 /* Assets.xcassets */,
 				A20000000000000000000004 /* Info.plist */,
 				A20000000000000000000005 /* PrivacyInfo.xcprivacy */,
 				A20000000000000000000006 /* Web */,
 			);
-			path = GeceKusu;
+			path = KibarHirsiz;
 			sourceTree = "<group>";
 		};
 		A40000000000000000000003 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				A20000000000000000000007 /* GeceKusu.app */,
+				A20000000000000000000007 /* KibarHirsiz.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -67,9 +67,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		A50000000000000000000001 /* GeceKusu */ = {
+		A50000000000000000000001 /* KibarHirsiz */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = A80000000000000000000002 /* Build configuration list for PBXNativeTarget "GeceKusu" */;
+			buildConfigurationList = A80000000000000000000002 /* Build configuration list for PBXNativeTarget "KibarHirsiz" */;
 			buildPhases = (
 				A30000000000000000000004 /* Oyun dosyalarını kopyala */,
 				A30000000000000000000001 /* Sources */,
@@ -80,9 +80,9 @@
 			);
 			dependencies = (
 			);
-			name = GeceKusu;
-			productName = GeceKusu;
-			productReference = A20000000000000000000007 /* GeceKusu.app */;
+			name = KibarHirsiz;
+			productName = KibarHirsiz;
+			productReference = A20000000000000000000007 /* KibarHirsiz.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -100,7 +100,7 @@
 					};
 				};
 			};
-			buildConfigurationList = A80000000000000000000001 /* Build configuration list for PBXProject "GeceKusu" */;
+			buildConfigurationList = A80000000000000000000001 /* Build configuration list for PBXProject "KibarHirsiz" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = tr;
 			hasScannedForEncodings = 0;
@@ -114,7 +114,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				A50000000000000000000001 /* GeceKusu */,
+				A50000000000000000000001 /* KibarHirsiz */,
 			);
 		};
 /* End PBXProject section */
@@ -159,7 +159,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A10000000000000000000001 /* GeceKusuApp.swift in Sources */,
+				A10000000000000000000001 /* KibarHirsizApp.swift in Sources */,
 				A10000000000000000000002 /* GameView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -219,7 +219,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = GeceKusu/Info.plist;
+				INFOPLIST_FILE = KibarHirsiz/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Kibar Hırsız";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.simulation-games";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -250,7 +250,7 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = GeceKusu/Info.plist;
+				INFOPLIST_FILE = KibarHirsiz/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Kibar Hırsız";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.simulation-games";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -274,7 +274,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		A80000000000000000000001 /* Build configuration list for PBXProject "GeceKusu" */ = {
+		A80000000000000000000001 /* Build configuration list for PBXProject "KibarHirsiz" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A70000000000000000000001 /* Debug */,
@@ -283,7 +283,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A80000000000000000000002 /* Build configuration list for PBXNativeTarget "GeceKusu" */ = {
+		A80000000000000000000002 /* Build configuration list for PBXNativeTarget "KibarHirsiz" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				A70000000000000000000003 /* Debug */,

@@ -67,9 +67,9 @@ struct GameView: UIViewRepresentable {
     }
 }
 
-/// gecekusu://app/... isteklerini uygulama paketindeki Web klasöründen yanıtlar.
+/// kibarhirsiz://app/... isteklerini uygulama paketindeki Web klasöründen yanıtlar.
 final class BundleSchemeHandler: NSObject, WKURLSchemeHandler {
-    static let scheme = "gecekusu"
+    static let scheme = "kibarhirsiz"
     private let root = Bundle.main.resourceURL!.appendingPathComponent("Web").standardizedFileURL
 
     func webView(_ webView: WKWebView, start task: WKURLSchemeTask) {

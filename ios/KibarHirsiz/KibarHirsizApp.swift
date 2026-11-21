@@ -2,7 +2,7 @@ import SwiftUI
 import AVFoundation
 
 @main
-struct GeceKusuApp: App {
+struct KibarHirsizApp: App {
     /// Oyun sayfası yüklenene kadar açılış ekranındaki amblem görünür kalır.
     @State private var loaded = false
 

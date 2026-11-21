@@ -1,5 +1,7 @@
 .DS_Store
-ios/GeceKusu/Web/
+ios/KibarHirsiz/Web/
 xcuserdata/
 *.xcuserstate
 build/
+ios/build/
+ios/build-device/

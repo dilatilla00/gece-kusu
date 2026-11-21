@@ -9,8 +9,8 @@ Bu klasörde App Store için gerekenlerin hepsi hazır: Xcode projesi, uygulama 
 
 ## 2. Projeyi Xcode'da aç
 
-1. `ios/GeceKusu.xcodeproj` dosyasına çift tıkla.
-2. Soldan **GeceKusu** projesini, ardından **Signing & Capabilities** sekmesini seç.
+1. `ios/KibarHirsiz.xcodeproj` dosyasına çift tıkla.
+2. Soldan **KibarHirsiz** projesini, ardından **Signing & Capabilities** sekmesini seç.
 3. **Team** kısmından kendi geliştirici hesabını seç.
 4. **Bundle Identifier** şu an `com.dilatilla.kibarhirsiz`. İstersen değiştirebilirsin, ama App Store'a yükledikten sonra değiştirilemez.
 5. Üstten bir iPhone simülatörü seçip ▶ düğmesine bas ve oyunun açıldığını gör.

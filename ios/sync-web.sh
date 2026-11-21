@@ -1,10 +1,10 @@
 #!/bin/sh
-# Oyunun web dosyalarını iOS uygulamasının içine (GeceKusu/Web) kopyalar.
+# Oyunun web dosyalarını iOS uygulamasının içine (KibarHirsiz/Web) kopyalar.
 # Xcode her derlemede bunu otomatik çalıştırır; elle de çalıştırılabilir.
 set -e
 HERE="$(cd "$(dirname "$0")" && pwd)"
 SRC="$HERE/.."
-DST="$HERE/GeceKusu/Web"
+DST="$HERE/KibarHirsiz/Web"
 mkdir -p "$DST"
 rsync -a --delete \
   --include='/index.html' --include='/css/***' --include='/js/***' \
