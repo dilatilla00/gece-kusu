@@ -460,6 +460,14 @@
           : `<button class="b2 ${skip ? '' : 'off'}" ${skip ? 'data-act="skipquest"' : ''}>${ic('refresh')}Başka görev</button><button class="b1" data-act="close">Tamam</button>`}</div>
         ${done ? '' : adBtn('skip', 'Bir kez daha görev değiştir')}`;
     }
+    if (m.type === 'away') {
+      const a = m.a, mins = Math.round(a.ms / 60000), dd = Math.floor(mins / 1440), hh = Math.floor(mins % 1440 / 60), mm = mins % 60;
+      const dur = dd ? `${dd} gün${hh ? ` ${hh} saat` : ''}` : hh ? `${hh} saat${mm ? ` ${mm} dakika` : ''}` : `${mm} dakika`;
+      inner = `<div class="big" style="background:var(--p3);color:var(--au)">${ic('moon-stars')}</div><h2>Sen yokken</h2>
+        <p>${dur} uzaktaydın. Bu arada neler oldu:</p>
+        <div class="awl">${a.rows.map(r => `<div class="awr"><span class="awi" style="color:var(--${r.tone})">${ic(r.icon)}</span><span>${r.text}</span></div>`).join('')}</div>
+        <button class="b1" data-act="close">Devam et</button>`;
+    }
     if (m.type === 'daily') {
       const d = G.dailyState();
       const val = r => `${r.money ? `<span class="dv">${ic('coins', 'au')}${fmt(r.money)}</span>` : ''}${r.gems ? `<span class="dv">${ic('diamond', 'gem')}${r.gems}</span>` : ''}`;
@@ -502,7 +510,7 @@
       inner = `<div class="big" style="background:var(--no);color:#0d1630">${ic('alert-triangle')}</div><h2>Emin misin?</h2><p>Bütün ilerlemen silinecek ve oyun baştan başlayacak.</p>
         <div class="btn-row"><button class="b2" data-act="close">Vazgeç</button><button class="b1" data-act="reset">Sıfırla</button></div>`;
     }
-    return `<div class="veil"><div class="modal ${m.type === 'daily' ? 'wide' : ''}" role="dialog" aria-modal="true">${inner}</div></div>`;
+    return `<div class="veil"><div class="modal ${m.type === 'daily' || m.type === 'away' ? 'wide' : ''}" role="dialog" aria-modal="true">${inner}</div></div>`;
   }
 
   function toast(html) {
@@ -631,6 +639,12 @@
   // Soygun sayacı: aşama değişince yeniden çiz, arada sadece süreleri güncelle.
   let lastPhase = null, lastAfford = null;
   setInterval(() => {
+    G.touch();
+    // "Sen yokken" özeti her şeyden önce gösterilir; o kapanana kadar soygun sonucu ve olay bekler.
+    if (G.away) {
+      if (!ui.modal && !document.getElementById('splash') && !(window.Tour && Tour.active)) { ui.modal = { type: 'away', a: G.away }; G.away = null; snd('phase'); render(); }
+      return;
+    }
     const st = G.heistStatus();
     if (!ui.modal && !(st && (st.pending || st.done)) && !document.getElementById('splash') && !(window.Tour && Tour.active) && G.dailyState().ready) {
       ui.modal = { type: 'daily' }; snd('gem'); render();
@@ -638,10 +652,10 @@
     if (window.Sound) { Sound.heist(!!st && !st.done); Sound.ambience(st && !st.pending && !st.done ? st.phase : null); }
     if (!st) { lastPhase = null; return; }
     if (st.done) {
-      if (ui.modal && ui.modal.type === 'outcome') return; // oyuncu olayın sonucunu okusun, sonra sonuç gelsin
+      if (ui.modal && (ui.modal.type === 'outcome' || ui.modal.type === 'away')) return; // oyuncu önce okusun, sonra sonuç gelsin
       const r = G.finishHeist(); lastPhase = null; lastAfford = null; if (r) { ui.modal = { type: 'result', r }; resultSound(r); render(); } return;
     }
-    if (st.pending) { if (!ui.modal || (ui.modal.type !== 'event' && ui.modal.type !== 'outcome')) { ui.modal = { type: 'event' }; snd(st.pending.sfx && window.Sound && Sound.has(st.pending.sfx) ? st.pending.sfx : 'alert'); render(); } return; }
+    if (st.pending) { if (!ui.modal || (ui.modal.type !== 'event' && ui.modal.type !== 'outcome' && ui.modal.type !== 'away')) { ui.modal = { type: 'event' }; snd(st.pending.sfx && window.Sound && Sound.has(st.pending.sfx) ? st.pending.sfx : 'alert'); render(); } return; }
     const afford = G.s.gems >= G.rushCost();
     if (st.phase !== lastPhase || afford !== lastAfford) { if (lastPhase != null && st.phase !== lastPhase) snd('phase'); lastPhase = st.phase; lastAfford = afford; render(); return; }
     $ui.querySelectorAll('[data-htotal]').forEach(e => { e.textContent = mmss(st.totalLeft); });
@@ -649,6 +663,13 @@
     $ui.querySelectorAll('[data-hbar]').forEach(e => { e.style.width = Math.round(st.phaseProg * 100) + '%'; });
     $ui.querySelectorAll('[data-hrush]').forEach(e => { e.textContent = G.rushCost(); });
   }, 500);
+
+  // Uygulama arka plandan dönünce de "sen yokken" kontrolü (soğuk açılışta motor zaten yaptı)
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { G.touch(Date.now(), true); return; }
+    const a = G.awayCheck();
+    if (a && !G.away) G.away = a;
+  });
 
   // Başlangıç turu için küçük arayüz bağlantısı
   window.UI = {

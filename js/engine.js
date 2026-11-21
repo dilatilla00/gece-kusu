@@ -207,6 +207,40 @@
     return { ...st.reward, day: st.idx + 1, streak: st.streak + 1 };
   }
 
+  // "Sen yokken": oyuncu uzun süre uzak kalınca neler olduğunu toplar. Uzaktayken zabıta takibi
+  // yavaş yavaş söner (her birkaç saatte bir kademe). Son görülme zamanı S.lastSeen'de tutulur.
+  const AW = E.away || { minMinutes: 15, heatEveryHours: 3 };
+  let lastSaveAt = 0;
+  function touch(now = Date.now(), force = false) {
+    S.lastSeen = now;
+    if (force || now - lastSaveAt > 20000) { lastSaveAt = now; save(); }
+  }
+  function awayCheck(now = Date.now()) {
+    const last = S.lastSeen;
+    S.lastSeen = now;
+    if (!last || now - last < AW.minMinutes * 60000 || !S.stats.robs) { save(); return null; }
+    const ms = now - last, out = { ms, rows: [] };
+    // Soygun
+    const st = heistStatus();
+    if (st) {
+      const t = targetById[st.id];
+      if (st.done) out.rows.push({ kind: 'done', icon: 'flag-check', tone: 'ok', text: `<b>${t.name}</b> işi bitti. Sonucu şimdi göreceksin.` });
+      else if (st.pending) out.rows.push({ kind: 'event', icon: 'alert-triangle', tone: 'wa', text: `<b>${t.name}</b> işinde bir şey oldu: ${st.pending.title}. Ne yapacağına sen karar vereceksin.` });
+      else out.rows.push({ kind: 'run', icon: 'clock', tone: 'mu', text: `<b>${t.name}</b> işi sürüyor, ${Math.ceil(st.totalLeft / 60)} dakika kaldı.` });
+    }
+    // Zabıta takibi söner
+    const steps = Math.floor(ms / (AW.heatEveryHours * 3600000));
+    if (S.heat > 0 && steps > 0) {
+      const h0 = S.heat; S.heat = Math.max(0, S.heat - steps);
+      out.rows.push({ kind: 'heat', icon: 'shield-check', tone: 'ok', text: S.heat ? `${heatLabel()} gevşedi: <b>${h0}/5 → ${S.heat}/5</b>.` : `${heatLabel()} seni unuttu: <b>${h0}/5 → 0/5</b>. Sokaklar yine senin.`, h0, h1: S.heat });
+    }
+    if (!out.rows.length) { save(); return null; }
+    const d = dailyState(new Date(now));
+    if (d.ready) out.rows.push({ kind: 'daily', icon: 'calendar-star', tone: 'au', text: `Günlük ödülün hazır: <b>${d.idx + 1}. gün</b>.` });
+    save();
+    return out;
+  }
+
   function levelUps() {
     let n = 0;
     while (S.xp >= xpCap(S.lv)) { S.xp -= xpCap(S.lv); S.lv++; S.sp++; S.gems++; n++; }
@@ -594,16 +628,17 @@
   }
 
   load(); ensureQuest();
+  const awayAtLoad = awayCheck(); // açılışta bir kez: sonucu arayüz gösterir
 
   window.Game = {
-    get s() { return S; }, E,
+    get s() { return S; }, E, away: awayAtLoad,
     cities: CITIES, cityById, cityOf, cityState, travel, heatLabel, legendOffer, buyLegend, colItemById, colSetById,
     security, lootRange, xpFor, masteryById, masteryState, learnMastery,
     tierById, targetById, skillById, toolById, crewById, itemById,
     market, marketState, buyMarket, gemRates, sellGem, buyGem, activeBuffs, immediate,
     crewSlots, crewCount, crewCut, crewState, trainCost, hire, train, dismiss,
     xpCap, tierOpen, targetOpen, cooldownLeft, scoutCost, requirements, odds, dateOf,
-    dailyState, claimDaily, quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest, canAd, adReward, addGems,
+    touch, awayCheck, dailyState, claimDaily, quest, questDone, claimQuest, skillState, canSkipQuest, skipQuest, canAd, adReward, addGems,
     pickPattern, rob, startHeist, heistStatus, finishHeist, rushCost, rush, heistTimes, baseTimes, choose, choiceChance, choicePenalty, choiceOpen, reqText, rushTarget,
     scout, rest, bribe, learn, buy, reset, markSeen,
   };

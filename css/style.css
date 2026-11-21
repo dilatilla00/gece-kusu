@@ -444,3 +444,10 @@ button { font-family: inherit; color: inherit; }
 .game.fit .modal.wide { padding: 16px 18px; }
 .game.fit .modal.wide p { margin-bottom: 10px; }
 .modal.wide .b1 .ti { margin-right: 6px; }
+
+/* Sen yokken */
+.awl { display: flex; flex-direction: column; gap: 8px; margin: 0 0 16px; text-align: left; }
+.awr { display: flex; align-items: center; gap: 12px; background: var(--bg); border: 1px solid var(--ln); border-radius: 10px; padding: 10px 12px; font-size: 14px; line-height: 1.35; }
+.awr b { color: var(--tx); }
+.awi { font-size: 22px; flex: none; display: flex; }
+.game.fit .awr { padding: 7px 10px; font-size: 13px; }
